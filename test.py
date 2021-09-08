@@ -1,12 +1,14 @@
-from fastai.vision import *
+from fastai.vision import ImageDataBunch, cnn_learner, models, accuracy
 
 path = 'images_ecoli/'
+
+# Load the data and predict Operon-pairs
+data = ImageDataBunch.from_folder(path, test='test_operons/')
+
 # Load the model
 learn = cnn_learner(data, models.resnet18, metrics=accuracy)
 learn = learn.load('best511')
 
-# Load the data and predict Operon-pairs
-data = ImageDataBunch.from_folder(path, test='test_operons/')
 output = open('operon_pegs.txt', 'w')
 c = 0
 for i in data.test_ds:
