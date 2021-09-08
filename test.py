@@ -1,4 +1,5 @@
-from fastai.vision import ImageDataBunch, cnn_learner, models, accuracy
+from fastai.metrics import accuracy
+from fastai.vision import ImageDataBunch, cnn_learner, models
 
 path = 'images_ecoli/'
 
