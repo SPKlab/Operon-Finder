@@ -1,7 +1,6 @@
 {
     "recommendations": [
         "matangover.mypy",
-        "ms-python.vscode-pylance",
         "ms-python.python"
     ]
 }
