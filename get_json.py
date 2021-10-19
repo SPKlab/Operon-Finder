@@ -1,13 +1,28 @@
+from functools import cache
 from gzip import decompress
 from shutil import move, rmtree
 from os import makedirs
 from pathlib import Path
+from typing import Optional
 from urllib.request import urlretrieve
 from glob import glob
-from subprocess import run
+from subprocess import run, check_output
 from concurrent.futures import ThreadPoolExecutor
+from json import loads
 
-def operon_clusters(genome_id: str, pegs: list[int])->list[list[int]]:
+@cache
+def operon_clusters(genome_id: str, pegs: Optional[frozenset[int]])->list[set[int]]:
+    if pegs is None:
+        x = loads(check_output([
+            "curl", 'https://patricbrc.org/api/genome_feature/',
+              "-H", 'accept: application/solr+json',
+              "-H", 'Content-Type: application/rqlquery+x-www-form-urlencoded',
+              "--data-raw", 'and(eq(genome_id,83332.12),eq(annotation,%22PATRIC%22))&limit(1)&facet((field,feature_type),(mincount,1))',
+              "--compressed" # TODO: Add it to other commands as well
+        ]))
+        max_pegs = x["facet_counts"]["facet_fields"]["feature_type"][1]
+        pegs = frozenset(range(1, max_pegs + 1))
+
     genes = [f"fig|{genome_id}.peg.{i}" for i in pegs]
 
     json_folder = ".json_files"
@@ -18,15 +33,15 @@ def operon_clusters(genome_id: str, pegs: list[int])->list[list[int]]:
             if not Path(json_path).exists():
                 args = [
                         "curl",
-                        "--max-time",
-                        "300",
+                        "--fail",
+                        "--max-time", "300",
                         "--data-binary",
                         '{"method": "SEED.compare_regions_for_peg", "params": ["'
                         + gene
                         + '", 5000, 20, "pgfam", "representative+reference"], "id": 1}',
                         "https://p3.theseed.org/services/compare_region",
-                        "-o",
-                        json_path,
+                        "--compressed",
+                        "-o", json_path,
                     ]
                 executor.submit(run, args)
 
@@ -83,12 +98,12 @@ def operon_clusters(genome_id: str, pegs: list[int])->list[list[int]]:
     peg_nums = sorted([[(_peg_num:=int(op.split('.')[-1])), _peg_num+1] for op in operons])
     # pair = [op, op[:op.rfind('.')+1] + str(peg_num + 1)]
 
-    clusters: list[list[int]] = []
+    clusters: list[set[int]] = []
     for peg_num in peg_nums:
-        if clusters and peg_num[0] == clusters[-1][1]:
-            clusters[-1].append(peg_num[1])
+        if clusters and peg_num[0] in clusters[-1]:
+            clusters[-1].add(peg_num[1])
         else:
-            clusters.append(peg_num)
+            clusters.append(set(peg_num))
     
     return clusters
     

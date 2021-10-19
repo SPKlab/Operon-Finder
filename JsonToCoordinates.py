@@ -140,7 +140,10 @@ def to_coordinates(json_dir: str):
                             if is_query == 1:
                                     if f['fid'] == r['pinned_peg']:
                                             query2 = True
-                                            pgf = f['attributes'][0][1]
+                                            try:
+                                                pgf = f['attributes'][0][1]
+                                            except IndexError as e:
+                                                    continue
                                             colormap[pgf] = 'blue'
                                     elif query2:
                                             query2 = False
