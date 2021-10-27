@@ -28,7 +28,7 @@ def parse_string_scores()->dict[str,float]:
     prev_product = ''
     prev = {}
     for genome in os.listdir('./genomes/'):
-        if genome[-3:] != 'gff' or '83332' not in genome:
+        if genome[-3:] != 'gff': # or '83332' not in genome:
             continue
         input = open('./genomes/' + genome, 'r')
         for row in input:
@@ -59,7 +59,7 @@ def parse_string_scores()->dict[str,float]:
         
     string = {} 
     for string_file in os.listdir('./strings/'):
-        if string_file[-3:] != 'txt' or '83332' not in string_file:
+        if string_file[-3:] != 'txt':
             continue
         input = open('./strings/' + string_file, 'r')
         next(input)

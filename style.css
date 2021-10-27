@@ -1,0 +1,22 @@
+ #MainMenu {visibility: hidden;} footer {visibility: hidden;} 
+
+.streamlit-expanderHeader {
+    font-size: 1rem !important;
+}
+
+[data-testid="stSidebar"] div:last-child > .stCheckbox > [data-baseweb="checkbox"] {
+    display: inline-flex;
+    -webkit-box-align: center;
+    align-items: center;
+    -webkit-box-pack: center;
+    justify-content: center;
+    font-weight: 400;
+    padding: 0.25rem 0.75rem 0.25rem 0.35em;
+    border-radius: 0.25rem;
+    margin: 0px;
+    line-height: 1.6;
+    color: inherit;
+    width: auto;
+    background-color: rgb(249, 249, 251);
+    border: 1px solid rgba(38, 39, 48, 0.2);
+}
