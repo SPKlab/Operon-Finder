@@ -14,7 +14,7 @@ from test import main
 
 @cache
 def operon_clusters(genome_id: str, pegs: frozenset[int]) -> list[set[int]]:
-    progress_bar = st.progress(0)
+    progress_bar = st.progress(0.05)
     gene_figure_name = {f"fig|{genome_id}.peg.{i}" for i in pegs}
 
     json_folder = ".json_files/compare_region"
@@ -39,7 +39,7 @@ def operon_clusters(genome_id: str, pegs: frozenset[int]) -> list[set[int]]:
                 ]
                 executor.submit(run, args)
 
-    progress_bar.progress(0.05)
+    progress_bar.progress(0.10)
 
     organism_genomes = {".".join(gene.split("|")[1].split(".")[:2]) for gene in gene_figure_name}
 
@@ -82,7 +82,7 @@ def operon_clusters(genome_id: str, pegs: frozenset[int]) -> list[set[int]]:
             Path("strings/parsed.json").unlink(missing_ok=True)
             Path("oc.txt").unlink(missing_ok=True)
 
-    progress_bar.progress(0.05)
+    progress_bar.progress(0.13)
 
     from JsonToCoordinates import to_coordinates
 

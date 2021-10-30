@@ -40,55 +40,48 @@ if genome_id_option == search:
             "Organism name", help="E.g. Mycobacterium tuberculosis H37Rv, Escherichia coli ATCC8739"
         )
         if organism_query:
-            organism_pattern = re.compile("(?<=<li>).*?(?=<br\/>)")
+            organism_pattern = re.compile("(?<=<span class='informal'>).*?(?=<\/span>)")
             organisms = organism_pattern.findall(
                 curl_output(
                     f"https://string-db.org/cgi/queryspeciesnames?species_text={quote_plus(organism_query)}&running_number=10&auto_detect=0&home_species=0&home_species_type=core&show_clades=0&show_mapped=1"
                 ).decode()
             )
             if not organisms:
-                raise InvalidInput
+                st.error(f"No organism of such name found.")
+                st.markdown(f"Try [alternate names](https://www.google.com/search?q=site%3Astring-db.org%2Fnetwork+{quote_plus(organism_query)})." )
+            else:
+                st.write("---")
+                organism_name = st.selectbox("Choose organism", organisms)
 
-            st.write("---")
-            organism_name = st.selectbox("Choose organism", organisms)
+                from bs4 import BeautifulSoup as bs
 
-            from bs4 import BeautifulSoup as bs
+                string_page = curl_output(
+                        f"https://string-db.org/cgi/organisms?species_text_organisms={quote_plus(organism_name)}"
+                    ).decode()
+                oid_pattern = re.compile("(?<=Info&id=).*?(?='>)").search( string_page)
+                ref_match = re.compile("(?:(?<=Example identifier: ).*?(?=<\/div>))|(?:(?<=identifiers:</div><div class='single_data'>).*?(?=(?:<\/div>)|(?:, )))").search(string_page)
+                assert oid_pattern and ref_match
+                organism_id = oid_pattern.group()
+                string_refseq = ref_match.group()
 
-            table = bs(
-                curl_output(
-                    f"https://string-db.org/cgi/organisms?species_text_organisms={quote_plus(organism_name)}"
-                ),
-                "html.parser",
-            ).select_one(
-                "#stringBodyTag > div.cell > div > div > div.single_organism_table"
-            )
-            string_refseq = (
-                table.select_one("div:nth-child(5) > div.single_data")
-                .string.split(",")[0]
-                .strip()
-            )
-            organism_id = table.select_one(
-                "div:nth-child(6) > div.single_data > a"
-            ).string
+                genome_results = loads(
+                    curl_output(
+                        "https://patricbrc.org/api/query/",
+                        "-H",
+                        "Content-Type: application/json",
+                        "--data-raw",
+                        '{"genome_feature":{"dataType":"genome_feature","accept":"application/solr+json","query":"and(keyword(%22'
+                        + string_refseq
+                        + "%22),keyword(%22"
+                        + organism_id
+                        + '%22))&ne(annotation,brc1)&ne(feature_type,source)&limit(3)&sort(+annotation,-score)"}}',
+                    )
+                )["genome_feature"]["result"]["response"]["docs"]
 
-            genome_results = loads(
-                curl_output(
-                    "https://patricbrc.org/api/query/",
-                    "-H",
-                    "Content-Type: application/json",
-                    "--data-raw",
-                    '{"genome_feature":{"dataType":"genome_feature","accept":"application/solr+json","query":"and(keyword(%22'
-                    + string_refseq
-                    + "%22),keyword(%22"
-                    + organism_id
-                    + '%22))&ne(annotation,brc1)&ne(feature_type,source)&limit(3)&sort(+annotation,-score)"}}',
-                )
-            )["genome_feature"]["result"]["response"]["docs"]
-
-            if not genome_results:
-                raise InvalidInput
-            genome_id = genome_results[0]["genome_id"]
-            st.sidebar.info(f"Selected Genome ID: {genome_id}")
+                if not genome_results:
+                    raise InvalidInput
+                genome_id = genome_results[0]["genome_id"]
+                st.sidebar.info(f"Selected Genome ID: {genome_id}")
     except InvalidInput:
         st.error("Not matching genomes found.")
 else:
@@ -126,7 +119,8 @@ if protein_id_filter:
 st.sidebar.write("---")
 
 
-submit = st.sidebar.checkbox("Submit") if genome_id else False
+s_chk = st.sidebar.checkbox("Run")
+submit = s_chk if genome_id else False
 
 if genome_id:
     st.write("---")
@@ -137,7 +131,7 @@ if genome_id:
     )
     df.index = df.index.astype(int)
     df = df.sort_index()
-    df.index.rename("foo", inplace=True)
+    # df.index.rename("PATRIC ID", inplace=True)
 
     with st.expander("Selected genes") if submit else nullcontext():
         if not submit:
@@ -158,67 +152,71 @@ if submit:
     any_pegs: Optional[set[int]] = None
     keywords: set[str] = set()
 
-    with st.expander("Filters", True):
-        cluster_size_range = st.slider(
-            "Cluster Size Range",
-            min_value=min_len,
-            max_value=max_len,
-            value=(min_len, max_len),
-            step=1,
-        )
-
-        contain_all = st.checkbox("Has all of the genes")
-        if contain_all:
-            must_pegs_text = st.text_area(
-                "Comma separated RefSeqs",
-                "Rv0001, Rv0002, Rv0003, Rv0004, Rv0005, Rv0006, Rv0007, Rv0008c,",
-                help=", ".join(map(str, range(3, 24))),
-                key="all",
+    if clusters:
+        with st.expander("Filters", True):
+            cluster_size_range = st.slider(
+                "Cluster Size Range",
+                min_value=min_len,
+                max_value=max_len,
+                value=(min_len, max_len),
+                step=1,
             )
-            must_pegs = {p.lower() for p in must_pegs_text.split(",")}
 
-        contain_any = st.checkbox("Has atleast one of the genes")
-        if contain_any:
-            any_pegs_text = st.text_area(
-                "Comma separated RefSeqs",
-                help="Rv0009, Rv0010c, Rv0011c, Rv0012, Rv0013, Rv0014c, Rv0015c, Rv0016, Rv0017, Rv0018c",
-                key="any",
-            )
-            any_pegs = {p.lower() for p in any_pegs_text.split(",")}
-
-        contain_keyword = st.checkbox("Has gene description keywords")
-        if contain_keyword:
-            desc_keyword_txt = st.text_input("", "conserved protein")
-            keywords = query_keywords(desc_keyword_txt)
-
-    body: list[str] = []
-    operons = []
-    for i, cluster in enumerate(clusters):
-        if not (
-            cluster_size_range[0] <= len(cluster) <= cluster_size_range[1]
-            and must_pegs.issubset({full_data[j].refseq.lower() for j in cluster})
-            and (
-                not any_pegs
-                or any([full_data[j].refseq.lower() in any_pegs for j in cluster])
-            )
-            and (
-                not keywords
-                or any(
-                    [
-                        query_keywords(full_data[j].desc).issuperset(keywords)
-                        for j in cluster
-                    ]
+            contain_all = st.checkbox("Has all of the genes")
+            if contain_all:
+                must_pegs_text = st.text_area(
+                    "Comma separated RefSeqs",
+                    "Rv0001, Rv0002, Rv0003, Rv0004, Rv0005, Rv0006, Rv0007, Rv0008c,",
+                    help=", ".join(map(str, range(3, 24))),
+                    key="all",
                 )
-            )
-        ):
-            continue
+                must_pegs = {p.lower() for p in must_pegs_text.split(",")}
 
-        operons.append((i, df.loc[sorted(cluster)]))
+            contain_any = st.checkbox("Has atleast one of the genes")
+            if contain_any:
+                any_pegs_text = st.text_area(
+                    "Comma separated RefSeqs",
+                    help="Rv0009, Rv0010c, Rv0011c, Rv0012, Rv0013, Rv0014c, Rv0015c, Rv0016, Rv0017, Rv0018c",
+                    key="any",
+                )
+                any_pegs = {p.lower() for p in any_pegs_text.split(",")}
+
+            contain_keyword = st.checkbox("Has gene description keywords")
+            if contain_keyword:
+                desc_keyword_txt = st.text_input("", "mce")
+                keywords = query_keywords(desc_keyword_txt)
+
+        body: list[str] = []
+        operons = []
+        for i, cluster in enumerate(clusters):
+            if not (
+                cluster_size_range[0] <= len(cluster) <= cluster_size_range[1]
+                and must_pegs.issubset({full_data[j].refseq.lower() for j in cluster})
+                and (
+                    not any_pegs
+                    or any([full_data[j].refseq.lower() in any_pegs for j in cluster])
+                )
+                and (
+                    not keywords
+                    or any(
+                        [
+                            query_keywords(full_data[j].desc).issuperset(keywords)
+                            for j in cluster
+                        ]
+                    )
+                )
+            ):
+                continue
+
+            operons.append((i, df.loc[sorted(cluster)]))
+    else:
+        operons = []
 
     if operons:
         st.write("## Operonic genes")
 
-        with st.expander("Save results"):
+        save = st.checkbox("Save results")
+        if save:
             st.download_button(
                 "Download",
                 data=dumps(
@@ -235,7 +233,10 @@ if submit:
 
         for i, (operon_num, dfx) in enumerate(operons):
             st.markdown(f"#### Operon {operon_num+1}")
-            st.table(dfx)
+            dfx['RefSeq'] = dfx['RefSeq'].apply(lambda r: f'<a target="_blank" href="https://www.ncbi.nlm.nih.gov/refseq/?term={r}">{r}</a>')
+            dfx['Protein ID'] = dfx['Protein ID'].apply(lambda r: f'<a target="_blank" href="https://www.ncbi.nlm.nih.gov/protein/?term={r}">{r}</a>')
+            st.write(dfx.to_html(justify='center', escape=False, classes=["table-borderless"], border=0), unsafe_allow_html=True)
+            # st.table(dfx)
             if i > 50 and not show_all:
                 break
     else:

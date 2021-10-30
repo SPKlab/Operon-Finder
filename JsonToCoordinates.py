@@ -17,8 +17,9 @@ colors = ["vlred", "vlblue", "lyellow", "orange", "gold", "lgrey", "lbrown", "pu
 random.seed(7)
 random.shuffle(colors)
 
-def remove_alpha(s: str):
-        return s
+def normalize_refseq(s: str):
+        # patric genome removes '_' from 'MAP_0001'
+        return s.replace('_', '')
         return ''.join(c for c in s if c.isdigit())
 
 def parse_string_scores()->dict[str,float]:
@@ -42,7 +43,7 @@ def parse_string_scores()->dict[str,float]:
             if len(c) < 2 or 'locus' != c[1][:5]:
                 continue
             peg = c[0][3:]
-            product = remove_alpha(c[1][10:] if 'locus' == c[1][:5] else peg.split('.')[-1].zfill(4))
+            product = normalize_refseq(c[1][10:] if 'locus' == c[1][:5] else peg.split('.')[-1].zfill(4))
             peg_to_product[product]  = peg
 
             prev[prev_product] = peg
@@ -65,8 +66,8 @@ def parse_string_scores()->dict[str,float]:
         next(input)
         for row in input:
             cols = row.strip().split()
-            g1 = remove_alpha(cols[0].split('.')[1])
-            g2 = remove_alpha(cols[1].split('.')[1])
+            g1 = normalize_refseq(cols[0].split('.')[1])
+            g2 = normalize_refseq(cols[1].split('.')[1])
             if g1 in peg_to_product:
                 g1 = peg_to_product[g1]
             else:
