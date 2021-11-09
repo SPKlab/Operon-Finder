@@ -4,9 +4,10 @@ from pathlib import Path
 from functools import cache
 from subprocess import check_output
 from json import dump, dumps, load, loads
-from typing import Optional
+from typing import Iterable, Optional
 
 from attr import dataclass
+
 
 @cache
 def curl_output(*args: str)->bytes:
@@ -42,7 +43,7 @@ def to_pid(
         refseq = feature.get("refseq_locus_tag", "None")
         protein_id = feature.get("protein_id", "None")
         if (
-            (query_strings and (not query_strings.issubset(desc.lower().split(" "))))
+            (query_strings and not all(s in desc.lower() for s in query_strings))
             or (refseqs and (refseq.lower() not in refseqs))
             or (protein_ids and protein_id.lower() not in protein_ids)
         ):

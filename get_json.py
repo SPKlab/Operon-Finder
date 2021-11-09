@@ -41,46 +41,41 @@ def operon_clusters(genome_id: str, pegs: frozenset[int]) -> list[set[int]]:
 
     progress_bar.progress(0.10)
 
-    organism_genomes = {".".join(gene.split("|")[1].split(".")[:2]) for gene in gene_figure_name}
+    genome_file_path = Path("genomes/" + genome_id + ".PATRIC.gff")
+    if not genome_file_path.exists():
+        run(
+            [
+                "wget",
+                f"ftp://ftp.patricbrc.org/genomes/{genome_id}/{genome_id}.PATRIC.gff",
+                "-O",
+                genome_file_path,
+            ]
+        )
+        Path("strings/parsed.json").unlink(missing_ok=True)
+        Path("oc.txt").unlink(missing_ok=True)
 
-    for organism_genome in organism_genomes:
-        genome_file_path = Path("genomes/" + organism_genome + ".PATRIC.gff")
-        if not genome_file_path.exists():
-            run(
-                [
-                    "wget",
-                    f"ftp://ftp.patricbrc.org/genomes/{organism_genome}/{organism_genome}.PATRIC.gff",
-                    "-O",
-                    genome_file_path,
-                ]
-            )
-            Path("strings/parsed.json").unlink(missing_ok=True)
-            Path("oc.txt").unlink(missing_ok=True)
+    organism = genome_id.split(".")[0]
 
-    organisms = {organism_genome.split(".")[0] for organism_genome in organism_genomes}
+    if not glob("strings/" + organism + ".protein.links.v11.*.txt"):
+        raw_path = f"{organism}.protein.links.v11.5.txt.gz"
+        urlretrieve(
+            f"https://stringdb-static.org/download/protein.links.v11.5/{raw_path}",
+            raw_path,
+        )
+        path = Path(raw_path)
 
+        target_file_path = path.parent.joinpath("strings").joinpath(
+            path.name.removesuffix(".gz")
+        )
+        with open(path, "rb") as compressed_file, open(
+            target_file_path, "w", encoding="utf8"
+        ) as decompressed_file:
+            decom_str = decompress(compressed_file.read()).decode("utf-8")
+            decompressed_file.write(decom_str)
 
-    for organism in organisms:
-        if not glob("strings/" + organism + ".protein.links.v11.*.txt"):
-            raw_path = f"{organism}.protein.links.v11.5.txt.gz"
-            urlretrieve(
-                f"https://stringdb-static.org/download/protein.links.v11.5/{raw_path}",
-                raw_path,
-            )
-            path = Path(raw_path)
-
-            target_file_path = path.parent.joinpath("strings").joinpath(
-                path.name.removesuffix(".gz")
-            )
-            with open(path, "rb") as compressed_file, open(
-                target_file_path, "w", encoding="utf8"
-            ) as decompressed_file:
-                decom_str = decompress(compressed_file.read()).decode("utf-8")
-                decompressed_file.write(decom_str)
-
-            path.unlink()
-            Path("strings/parsed.json").unlink(missing_ok=True)
-            Path("oc.txt").unlink(missing_ok=True)
+        path.unlink()
+        Path("strings/parsed.json").unlink(missing_ok=True)
+        Path("oc.txt").unlink(missing_ok=True)
 
     progress_bar.progress(0.13)
 

@@ -1,4 +1,6 @@
 from json import dumps, loads
+import requests
+from urllib.request import urlopen
 from pathlib import Path
 from contextlib import nullcontext
 from subprocess import check_output
@@ -81,24 +83,42 @@ if genome_id_option == search:
                 if not genome_results:
                     raise InvalidInput
                 genome_id = genome_results[0]["genome_id"]
-                st.sidebar.info(f"Selected Genome ID: {genome_id}")
     except InvalidInput:
         st.error("Not matching genomes found.")
 else:
-    genome_id = st.sidebar.text_input("Genome ID", "83332.12")  # 111')
+    genome_id = st.sidebar.text_input("Genome ID", "262316.17", help="Must be available in PATRIC and STRING databases.") #83332.12")  # 111')
+    if not re.match(r"\d+\.\d+", genome_id):
+        genome_id = None
+        st.sidebar.error("Invalid Genome ID format. E.g. 262316.17")
+    try:
+        for url in (
+            f"https://patricbrc.org/api/genome/{genome_id}",
+            f"https://stringdb-static.org/download/protein.links.v11.5/{genome_id.split('.')[0]}.protein.links.v11.5.txt.gz",
+        ):
+            if not requests.head(url).ok:
+                genome_id = None
+                st.sidebar.error("This genome is not supported. Try searching instead.")
+    except ConnectionError:
+        print("Connection error")
+        
+    
+if genome_id:
+    # link_button(f"Genome details: {genome_id}", f"https://www.patricbrc.org/view/Genome/{genome_id}#view_tab=features")
+    st.sidebar.markdown(f"**Genome details:** [`{genome_id}`](https://www.patricbrc.org/view/Genome/{genome_id}#view_tab=features)")
+
 
 st.sidebar.markdown("### Filter input genes")
 
 filter_method = "Filter"
 
-query_genes = st.sidebar.checkbox("Description filter", value=True)
+query_genes = st.sidebar.checkbox("Description keywords", value=False)
 query_text = (
     st.sidebar.text_input("Select genes by description keywords", "MCe")
     if query_genes
     else None
 )
 
-refseq_filter = st.sidebar.checkbox("RefSeq filter")
+refseq_filter = st.sidebar.checkbox("RefSeqs")
 refseqs = None
 if refseq_filter:
     refseq_list_text = st.sidebar.text_area(
@@ -107,7 +127,7 @@ if refseq_filter:
     )
     refseqs = frozenset({p.strip(" ") for p in refseq_list_text.split(",")})
 
-protein_id_filter = st.sidebar.checkbox("Protein filter")
+protein_id_filter = st.sidebar.checkbox("Proteins")
 protein_ids = None
 if protein_id_filter:
     protein_ids_text = st.sidebar.text_area(
@@ -133,9 +153,9 @@ if genome_id:
     df = df.sort_index()
     # df.index.rename("PATRIC ID", inplace=True)
 
-    with st.expander("Selected genes") if submit else nullcontext():
+    with st.expander("Input genes") if submit else nullcontext():
         if not submit:
-            st.markdown("### Selected genes")
+            st.markdown("### Input genes")
         st.dataframe(df)
 
 if submit:
@@ -153,9 +173,9 @@ if submit:
     keywords: set[str] = set()
 
     if clusters:
-        with st.expander("Filters", True):
+        with st.expander("Filter operons", True):
             cluster_size_range = st.slider(
-                "Cluster Size Range",
+                "Gene count",
                 min_value=min_len,
                 max_value=max_len,
                 value=(min_len, max_len),
@@ -181,7 +201,7 @@ if submit:
                 )
                 any_pegs = {p.lower() for p in any_pegs_text.split(",")}
 
-            contain_keyword = st.checkbox("Has gene description keywords")
+            contain_keyword = st.checkbox("Has gene description keywords", value=True)
             if contain_keyword:
                 desc_keyword_txt = st.text_input("", "mce")
                 keywords = query_keywords(desc_keyword_txt)
@@ -200,7 +220,7 @@ if submit:
                     not keywords
                     or any(
                         [
-                            query_keywords(full_data[j].desc).issuperset(keywords)
+                            all(s in full_data[j].desc.lower() for s in keywords)
                             for j in cluster
                         ]
                     )
@@ -213,22 +233,20 @@ if submit:
         operons = []
 
     if operons:
-        st.write("## Operonic genes")
-
-        save = st.checkbox("Save results")
+        st.info(f"{len(operons)} operons found")
+        
+        save = st.checkbox(f"Save results") 
         if save:
             st.download_button(
                 "Download",
-                data=dumps(
-                    {i: dfx.to_dict() for i, dfx in operons}, indent=4, sort_keys=True
-                ),
+                data= '\n'.join(['\t'.join(["PATRIC ID", *df.columns.tolist()])] + [f"Operon {i}\n" + dfx.to_csv(header=False, sep='\t') for i, dfx in operons]),
                 file_name="predicted_operons.json",
             )
 
-        show_all = (
-            st.checkbox(f"Show all {len(operons)} operons")
+        show_all = not (
+            st.checkbox(f"Show first 50 operons", value=True)
             if len(operons) > 50
-            else True
+            else False
         )
 
         for i, (operon_num, dfx) in enumerate(operons):
