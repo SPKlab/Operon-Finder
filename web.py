@@ -43,11 +43,11 @@ if genome_id_option == search:
         )
         if organism_query:
             organism_pattern = re.compile("(?<=<span class='informal'>).*?(?=<\/span>)")
-            organisms = organism_pattern.findall(
+            organisms = set(organism_pattern.findall(
                 curl_output(
                     f"https://string-db.org/cgi/queryspeciesnames?species_text={quote_plus(organism_query)}&running_number=10&auto_detect=0&home_species=0&home_species_type=core&show_clades=0&show_mapped=1"
                 ).decode()
-            )
+            ))
             if not organisms:
                 st.error(f"No organism of such name found.")
                 st.markdown(f"Try [alternate names](https://www.google.com/search?q=site%3Astring-db.org%2Fnetwork+{quote_plus(organism_query)})." )
@@ -92,7 +92,7 @@ else:
         st.sidebar.error("Invalid Genome ID format. E.g. 262316.17")
     try:
         for url in (
-            f"https://patricbrc.org/api/genome/{genome_id}",
+            # f"https://patricbrc.org/api/genome/{genome_id}",
             f"https://stringdb-static.org/download/protein.links.v11.5/{genome_id.split('.')[0]}.protein.links.v11.5.txt.gz",
         ):
             if not requests.head(url).ok:
