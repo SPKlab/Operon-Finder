@@ -38,12 +38,11 @@ genome_id_option = st.sidebar.radio("", (search, manual))
 genome_id = None
 if genome_id_option == search:
     try:
-        organism_selection = st.sidebar.selectbox("Choose organism",
-            ["Custom", "Escherichia coli str. K-12 substr. MG1655", "Corynebacterium glutamicum ATCC 13032", "Photobacterium profundum SS9", "Caenorhabditis elegans", "Bacillus subtilis subsp. subtilis str. 168", "Legionella pneumophila str. Paris", "Listeria monocytogenes EGD-e", "Helicobacter pylori 26695", "Mycoplasma pneumoniae M129", "Mycobacterium tuberculosis H37Rv 4", "Mycobacterium avium subsp. paratuberculosis K-10"])
-        organism_query = st.sidebar.text_input( "Enter name", help="E.g. Mycobacterium tuberculosis H37Rv, Escherichia coli ATCC8739"
-            ).strip() if organism_selection == 'Custom' else organism_selection
+        sample_organisms = {'Custom': None, 'Escherichia coli str. K-12 substr. MG1655': '511145.12', 'Corynebacterium glutamicum ATCC 13032': '196627.14', 'Photobacterium profundum SS9': '298386.8', 'Bacillus subtilis subsp. subtilis str. 168': '224308.43', 'Legionella pneumophila str. Paris': '297246.15', 'Listeria monocytogenes EGD-e': '169963.11', 'Helicobacter pylori 26695': '85962.47', 'Mycoplasma pneumoniae M129': '272634.6', 'Mycobacterium tuberculosis H37Rv': '83332.12', 'Mycobacterium avium subsp. paratuberculosis K-10': '262316.17'}
+        organism_selection = st.sidebar.selectbox("Choose organism", sample_organisms, index=1)
+        genome_id = sample_organisms[organism_selection]
 
-        if organism_query: 
+        if genome_id is None and (organism_query := st.sidebar.text_input( "Enter name", help="E.g. Mycobacterium tuberculosis H37Rv, Escherichia coli ATCC8739").strip()): 
             organism_pattern = re.compile("(?<=<span class='informal'>).*?(?=<\/span>)")
             organisms = set(organism_pattern.findall(
                 curl_output(
@@ -54,8 +53,11 @@ if genome_id_option == search:
                 st.error(f"No organism of such name found.")
                 st.markdown(f"Try [alternate names](https://www.google.com/search?q=site%3Astring-db.org%2Fnetwork+{quote_plus(organism_query)})." )
             else:
-                st.write("---")
-                organism_name = st.selectbox("Choose organism", organisms)
+                if len(organisms) == 1 and organism_selection != 'Custom':
+                    organism_name = next(iter(organisms))
+                else:
+                    st.write("---")
+                    organism_name = st.selectbox("Choose organism", organisms)
 
                 from bs4 import BeautifulSoup as bs
 
@@ -83,7 +85,7 @@ if genome_id_option == search:
                     )
                 )["genome_feature"]["result"]
 
-                if "response" not  in genome_results:
+                if "response" not  in genome_results or not genome_results["response"]["docs"]:
                     raise InvalidInput
                 genome_id = genome_results["response"]["docs"][0]["genome_id"]
     except InvalidInput:
@@ -93,7 +95,7 @@ else:
     if re.match(r"\d+\.\d+", genome_id):
         try:
             for url in (
-                # f"https://patricbrc.org/api/genome/{genome_id}",
+                f"https://patricbrc.org/api/genome/{genome_id}",
                 f"https://stringdb-static.org/download/protein.links.v11.5/{genome_id.split('.')[0]}.protein.links.v11.5.txt.gz",
             ):
                 if not requests.head(url).ok:
