@@ -1,6 +1,7 @@
 from functools import cache
 from math import floor
 from json import dump, loads
+from os import makedirs
 from pathlib import Path
 from fastai.metrics import accuracy
 from fastai.vision import ImageDataBunch, cnn_learner, models
@@ -21,36 +22,36 @@ def predictor(idx: int, data: ImageDataBunch):
     return is_operon
 
 
-def main(genes: set, progress_bar):
+def main(genome_id: str, progress_bar) -> list[int]:
     # No need to update learn's data since input image passed manually
-    data = ImageDataBunch.from_folder(path, test='test_operons/')
+    data = ImageDataBunch.from_folder(path, test=f'test_operons/{genome_id}')
+    total = sum(1 for _ in Path(path).joinpath(f'test_operons/{genome_id}').iterdir())
     
-    predict_json = Path('.json_files/predict.json')
-    predict_dict = loads(predict_json.read_bytes()) if predict_json.exists() else {}
+    makedirs('.json_files/operons/', exist_ok=True)
+    predict_json = Path(f'.json_files/operons/{genome_id}.json')
+    if predict_json.exists():
+        predict_list = loads(predict_json.read_bytes())
+    else:
+        predict_list = []
 
-    output = open('operon_pegs.txt', 'w')
-    c = 0
-    print("Enter predict")
-    c = 0
-    for i in range(len(data.test_ds)):
-        filename = str(data.test_ds.items[i]).split('/')[-1]
-        fsplit = filename.removesuffix('.jpg').split('_')
-        if genes.issuperset(fsplit):
+        print("Enter predict")
+        c = 0
+        for i in range(len(data.test_ds)):
+            filename = str(data.test_ds.items[i]).split('/')[-1]
+            fsplit = filename.removesuffix('.jpg').split('_')
             c += 1
-            progress_bar.progress(min(c/len(genes)*0.80 + .19, 0.99))
-            if filename not in predict_dict:
-                predict_dict[filename] = predictor(i, data)
-            is_operon = predict_dict[filename]
+            progress_bar.progress(min(c/total*0.80 + .19, 0.99))
+            is_operon = predictor(i, data)
             if is_operon:
                 fname = fsplit[0]
-                output.write(fname + '\n')
-    print("End predict")
-    output.close()
+                predict_list.append(int(fname.split(".")[-1]))
+        print("End predict")
     
-    with open(predict_json, 'w') as f:
-        dump(predict_dict, f)
+        with open(predict_json, 'w') as f:
+            dump(predict_list, f)
         
     progress_bar.empty()
+    return predict_list
         
     
 

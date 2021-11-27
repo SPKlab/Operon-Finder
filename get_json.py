@@ -10,34 +10,38 @@ from subprocess import run, check_output
 from concurrent.futures import ThreadPoolExecutor
 
 import streamlit as st
+from JsonToCoordinates import parse_string_scores
 from test import main
 
 @cache
-def operon_clusters(genome_id: str, pegs: frozenset[int]) -> list[set[int]]:
+def operon_clusters(genome_id: str, pegs: frozenset) -> list[set[int]]:
     progress_bar = st.progress(0.05)
+    genome_data_changed = False
     gene_figure_name = {f"fig|{genome_id}.peg.{i}" for i in pegs}
 
-    json_folder = ".json_files/compare_region"
+    json_folder = f".json_files/compare_region/{genome_id}"
     makedirs(json_folder, exist_ok=True)
-    with ThreadPoolExecutor(10, "JSONFetcher") as executor:
-        for gene in gene_figure_name:
-            json_path = f"{json_folder}/{gene}.json"
-            if not Path(json_path).exists():
-                args = [
-                    "curl",
-                    "--fail",
-                    "--max-time",
-                    "300",
-                    "--data-binary",
-                    '{"method": "SEED.compare_regions_for_peg", "params": ["'
-                    + gene
-                    + '", 5000, 20, "pgfam", "representative+reference"], "id": 1}',
-                    "https://p3.theseed.org/services/compare_region",
-                    "--compressed",
-                    "-o",
-                    json_path,
-                ]
-                executor.submit(run, args)
+    if sum(1 for _ in Path(json_folder).iterdir()) < len(gene_figure_name):
+        with ThreadPoolExecutor(30, "JSONFetcher") as executor:
+            for gene in gene_figure_name:
+                json_path = f"{json_folder}/{gene}.json"
+                if not Path(json_path).exists():
+                    args = [
+                        "curl",
+                        "--fail",
+                        "--max-time",
+                        "300",
+                        "--data-binary",
+                        '{"method": "SEED.compare_regions_for_peg", "params": ["'
+                        + gene
+                        + '", 5000, 20, "pgfam", "representative+reference"], "id": 1}',
+                        "https://p3.theseed.org/services/compare_region",
+                        "--compressed",
+                        "-o",
+                        json_path,
+                    ]
+                    executor.submit(run, args)
+                    genome_data_changed = True
 
     progress_bar.progress(0.10)
 
@@ -51,8 +55,7 @@ def operon_clusters(genome_id: str, pegs: frozenset[int]) -> list[set[int]]:
                 genome_file_path,
             ]
         )
-        Path("strings/parsed.json").unlink(missing_ok=True)
-        Path("oc.txt").unlink(missing_ok=True)
+        genome_data_changed = True
 
     organism = genome_id.split(".")[0]
 
@@ -74,28 +77,34 @@ def operon_clusters(genome_id: str, pegs: frozenset[int]) -> list[set[int]]:
             decompressed_file.write(decom_str)
 
         path.unlink()
-        Path("strings/parsed.json").unlink(missing_ok=True)
-        Path("oc.txt").unlink(missing_ok=True)
+        genome_data_changed = True
 
     progress_bar.progress(0.13)
 
     from JsonToCoordinates import to_coordinates
 
-    if not Path('oc.txt').exists():
-        to_coordinates(json_folder)
+    test_operons_path = f"images_custom/test_operons/{genome_id}"
+    if genome_data_changed:
+        Path(test_operons_path).unlink(missing_ok=True)
+
+    if not Path(test_operons_path).exists():
+        coords_filename = to_coordinates(json_folder, genome_id)
         print("Coordinates created")
 
         progress_bar.progress(0.15)
-        test_operons_path = "images_custom/test_operons"
         makedirs(test_operons_path, exist_ok=True)
-        run(["java", "CoordsToJpg.java", "oc.txt", test_operons_path])
+        run(["java", "CoordsToJpg.java", coords_filename, test_operons_path])
+        Path(coords_filename).unlink()
         progress_bar.progress(0.20)
 
-    main(gene_figure_name, progress_bar)
-
-    operons = Path("operon_pegs.txt").read_text().splitlines()
+    operons = main(genome_id, progress_bar)
+    peg_next  = {}
+    prev = -1
+    for peg in sorted(pegs):
+        peg_next[prev] = peg
+        prev = peg
     peg_nums = sorted(
-        [[(_peg_num := int(op.split(".")[-1])), _peg_num + 1] for op in operons]
+        [[peg_num, peg_next[peg_num]] for peg_num in operons]
     )
     # pair = [op, op[:op.rfind('.')+1] + str(peg_num + 1)]
 

@@ -174,6 +174,10 @@ public class CoordsToJpg {
 
         BufferedImage bufferedImage = new BufferedImage(300, 300, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = bufferedImage.createGraphics();
+        // BufferedImage bufferedImage2 = new BufferedImage(64, 64, BufferedImage.TYPE_INT_RGB);
+        // Graphics2D g2d2 = bufferedImage2.createGraphics();
+        // g2d2.setColor(Color.WHITE);
+        // g2d2.fillRect(0, 0, 300, 300);
 
         int[] polygonXs = new int[7];
         int[] polygonYs = new int[7];
@@ -205,6 +209,8 @@ public class CoordsToJpg {
                     if (img_file.exists())
                         continue;
                     g2d.drawImage(bufferedImage, 0, 0, null);
+                    // g2d2.drawImage(bufferedImage, 0, 0, 64, 64, null);
+                    // ImageIO.write(bufferedImage2, "jpg", img_file);
                     ImageIO.write(bufferedImage, "jpg", img_file);
                 }
 
@@ -275,6 +281,8 @@ public class CoordsToJpg {
         img_file = new File(outputFolder + img_name + ".jpg");
         if (!img_file.exists()) {
             g2d.drawImage(bufferedImage, 0, 0, null);
+            // g2d2.drawImage(bufferedImage, 0, 0, 64, 64, null);
+            // ImageIO.write(bufferedImage2, "jpg", img_file);
             ImageIO.write(bufferedImage, "jpg", img_file);
         }
         System.out.println(count);

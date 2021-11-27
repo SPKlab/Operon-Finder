@@ -13,23 +13,9 @@ from attr import dataclass
 def curl_output(*args: str)->bytes:
     return check_output(('curl', '--compressed') + args)
 
-# @dataclass
-# class PatricMeta:
-#     refseq: str
-#     desc: str
-#     protein_id: str
-
 PatricMeta = namedtuple('PatricMeta', ['refseq', 'desc', 'protein_id'])
 
-def to_pid(
-    genome_id: str, refseqs: Optional[frozenset[str]], query: Optional[str], protein_ids: Optional[frozenset[str]]
-) -> tuple[dict[int, PatricMeta], int]:
-    if refseqs:
-        refseqs = frozenset({refseq.lower() for refseq in refseqs})
-    query_strings = query_keywords(query) if query and query.strip(' ') else None
-    if protein_ids:
-        protein_ids = frozenset({pid.lower() for pid in protein_ids})
-
+def to_pid( genome_id: str) -> tuple[dict[int, PatricMeta], int]:
     genome_data = get_genome_data(genome_id)
     feature_data = genome_data["docs"]
 
@@ -42,12 +28,6 @@ def to_pid(
 
         refseq = feature.get("refseq_locus_tag", "None")
         protein_id = feature.get("protein_id", "None")
-        if (
-            (query_strings and not all(s in desc.lower() for s in query_strings))
-            or (refseqs and (refseq.lower() not in refseqs))
-            or (protein_ids and protein_id.lower() not in protein_ids)
-        ):
-            continue
         patric_id = int(feature["patric_id"].split(".")[-1])
         full_data[patric_id] = PatricMeta(
             desc=desc, refseq=refseq, protein_id=protein_id
