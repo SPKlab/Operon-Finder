@@ -1,0 +1,62 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "Streamlit dbg",
+            "type": "python",
+            "subProcess": true,
+            "request": "launch",
+            "program": "/tmp/OperonHunter/.venv/bin/streamlit",
+            "args": [
+                "run",
+                "web.py"
+            ],
+            "justMyCode": true,
+            "redirectOutput": true,
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "."
+                }
+            ]
+        },
+        {
+            "type": "java",
+            "name": "coordstoJpg",
+            "request": "launch",
+            "mainClass": "CoordsToJpg",
+            "args": [
+                "coords/196627.14/196627.14olm5espl",
+                "debug"
+            ]
+        },
+        {
+            "name": "Benchmark",
+            "type": "python",
+            "request": "launch",
+            "program": "python",
+            "args": [
+                "benchmark.py"
+            ],
+            "justMyCode": true,
+            "redirectOutput": true,
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "."
+                }
+            ]
+        },
+        {
+            "name": "Python: Current File (Integrated Terminal)",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        }
+    ]
+}

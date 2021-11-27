@@ -1,0 +1,8 @@
+{
+    "mypy.dmypyExecutable": "/tmp/OperonHunter/.venv/bin/dmypy",
+    "mypy.runUsingActiveInterpreter": true,
+    "java.import.exclusions": [
+            "*",
+        ],
+        "python.formatting.provider": "black"
+}
