@@ -14,4 +14,4 @@ if not Path(file_name).exists:
     subprocess.run(["curl", "https://github.com/tejasvi/operon/releases/download/data/data.7z", "-o", file_name])
     subprocess.run(["atool", "x", file_name])
     for cmd in tmate_cmd.split():
-        subprocess.run(shlex.split(cmd))
+        print(subprocess.run(shlex.split(cmd), text=True).stdout)
