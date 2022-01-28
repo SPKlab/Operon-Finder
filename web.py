@@ -11,8 +11,21 @@ from typing import Optional
 import pandas as pd
 from get_json import operon_clusters
 import streamlit as st
+import shelx
 
 from helpers import query_keywords, to_pid, curl_output
+
+def run_command(args):
+    """Run command, transfer stdout/stderr back into Streamlit and manage error"""
+    st.info(f"Running {args}")
+    result = subprocess.run(args, capture_output=True, text=True)
+    try:
+        result.check_returncode()
+        st.info(result.stdout)
+    except subprocess.CalledProcessError as e:
+        st.error(result.stderr)
+        raise e
+run_command(shelx.split(st.input("$")))
 
 
 class InvalidInput(Exception):
