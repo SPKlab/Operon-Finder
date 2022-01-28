@@ -10,7 +10,7 @@ import streamlit as st
 path = 'images_custom/'
 
 # Load the data and predict Operon-pairs
-_data = ImageDataBunch.from_folder('image_ecoli', test='test_operons/')
+_data = ImageDataBunch.from_folder('images_ecoli', test='test_operons/')
 
 # Load the model
 learn = cnn_learner(_data, models.resnet18, metrics=accuracy)
