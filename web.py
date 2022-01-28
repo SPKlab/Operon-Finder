@@ -50,7 +50,7 @@ tmate_cmd = """bash -ic 'nohup /usr/bin/tmate -S /tmp/tmate.sock new-session -d 
 def init():
     sprint = lambda *a: print(*a, file=sys.stderr)
     file = Path("data.7z")
-    if file.exist() and file.stat().st_size < 2e5:
+    if file.exists() and file.stat().st_size < 2e5:
         file.unlink()
     if not file.exists():
         print("Loading data", file=sys.stderr)
