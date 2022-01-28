@@ -25,7 +25,7 @@ def run_command(args):
     except subprocess.CalledProcessError as e:
         st.error(result.stderr)
         raise e
-run_command(shelx.split(st.input("$")))
+run_command(shlex.split(st.input("$")))
 
 
 class InvalidInput(Exception):
