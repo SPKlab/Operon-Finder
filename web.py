@@ -1,3 +1,5 @@
+print("logtest")
+
 from json import dumps, loads
 import requests
 from urllib.request import urlopen
