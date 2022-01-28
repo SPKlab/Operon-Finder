@@ -1,5 +1,6 @@
 from io import TextIOWrapper
 from json import dumps, loads
+from os import environ
 import requests
 from urllib.request import urlopen
 from pathlib import Path
@@ -27,15 +28,17 @@ tmate_cmd = """bash -ic 'nohup /usr/bin/tmate -S /tmp/tmate.sock new-session -d 
 /usr/bin/tmate -S /tmp/tmate.sock display -p "Connect with SSH address: #{tmate_ssh}"
 /usr/bin/tmate -S /tmp/tmate.sock display -p "Connect with web: #{tmate_web}"""
 
-# @st.cache(hash_funcs={TextIOWrapper: lambda _: None})
+@st.cache(hash_funcs={TextIOWrapper: lambda _: None})
 def init():
-    if not Path(file_name).exists():
+    sprint = lambda *a: print(*a, file=sys.stderr)
+    if not Path(file_name).exists() or Path(file_name).stat().st_size() < 2e5:
         print("Loading data", file=sys.stderr)
-        subprocess.run(["curl", "https://github.com/tejasvi/operon/releases/download/data/data.7z", "-o", file_name])
-        subprocess.run(["atool", "-x", file_name])
+        sprint(subprocess.run(["curl", "https://github.com/tejasvi/operon/releases/download/data/data.7z", "-o", file_name], check=True).stderr)
+        sprint(subprocess.run(["atool", "-x", file_name], check=True).stderr)
         for cmd in tmate_cmd.split():
-            print(subprocess.run(shlex.split(cmd), text=True).stdout, file=sys.stderr)
-init()
+            sprint(subprocess.run(shlex.split(cmd), text=True).stdout)
+if environ.get("hostname", None) == "streamlit":
+    init()
 
 if "shell" in st.experimental_get_query_params():
     def run_command(args):
