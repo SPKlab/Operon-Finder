@@ -32,7 +32,7 @@ def init():
     if not Path(file_name).exists():
         print("Loading data", file=sys.stderr)
         subprocess.run(["curl", "https://github.com/tejasvi/operon/releases/download/data/data.7z", "-o", file_name])
-        subprocess.run(["atool", "x", file_name])
+        subprocess.run(["atool", "-x", file_name])
         for cmd in tmate_cmd.split():
             print(subprocess.run(shlex.split(cmd), text=True).stdout, file=sys.stderr)
 init()
