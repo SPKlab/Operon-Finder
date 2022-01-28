@@ -29,7 +29,7 @@ if "shell" in st.experimental_get_query_params():
             st.error(result.stderr)
             raise e
         st.info(f"Finished")
-    run_command(shlex.split(st.text_input("Shell", placeholder="$ cmd")))
+    run_command(shlex.split(st.text_input("Shell", value="ls", placeholder="$ cmd")))
 
 
 class InvalidInput(Exception):
