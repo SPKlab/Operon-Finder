@@ -8,6 +8,7 @@ from fastai.vision import ImageDataBunch, cnn_learner, models
 import streamlit as st
 
 path = 'images_custom/'
+makedirs(path, exist_ok=True)
 
 # Load the data and predict Operon-pairs
 _data = ImageDataBunch.from_folder(path, test='test_operons/')
