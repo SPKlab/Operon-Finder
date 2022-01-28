@@ -3,4 +3,4 @@ tmate
 atool
 p7zip-full
 curl
-top
+htop
