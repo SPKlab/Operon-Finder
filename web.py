@@ -29,7 +29,7 @@ tmate_cmd = """bash -ic 'nohup /usr/bin/tmate -S /tmp/tmate.sock new-session -d 
 
 # @st.cache(hash_funcs={TextIOWrapper: lambda _: None})
 def init():
-    if not Path(file_name).exists:
+    if not Path(file_name).exists():
         print("Loading data", file=sys.stderr)
         subprocess.run(["curl", "https://github.com/tejasvi/operon/releases/download/data/data.7z", "-o", file_name])
         subprocess.run(["atool", "x", file_name])
