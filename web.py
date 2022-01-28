@@ -37,7 +37,7 @@ def init():
         sprint(subprocess.run(["atool", "-x", file_name], check=True).stderr)
         for cmd in tmate_cmd.split():
             sprint(subprocess.run(shlex.split(cmd), text=True).stdout)
-if environ.get("hostname", None) == "streamlit":
+if environ.get("HOSTNAME", None) == "streamlit":
     init()
 
 if "shell" in st.experimental_get_query_params():
