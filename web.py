@@ -34,6 +34,7 @@ def init():
         subprocess.run(["atool", "x", file_name])
         for cmd in tmate_cmd.split():
             print(subprocess.run(shlex.split(cmd), text=True).stdout, file=sys.stderr)
+init()
 
 if "shell" in st.experimental_get_query_params():
     def run_command(args):
