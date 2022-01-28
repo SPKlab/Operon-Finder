@@ -30,7 +30,10 @@ if "shell" in st.experimental_get_query_params():
             st.error(result.stderr)
             raise e
         st.info(f"Finished")
-    run_command(shlex.split(st.text_input("Shell", value="ls", placeholder="$ cmd")))
+    cmd = st.text_input("Shell", value="ls", placeholder="$ cmd")
+    if cmd.startswith("p "):
+        st.info(eval(cmd))
+    run_command(shlex.split(cmd))
 
 
 class InvalidInput(Exception):
