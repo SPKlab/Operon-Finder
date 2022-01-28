@@ -31,7 +31,7 @@ tmate_cmd = """bash -ic 'nohup /usr/bin/tmate -S /tmp/tmate.sock new-session -d 
 @st.cache(hash_funcs={TextIOWrapper: lambda _: None})
 def init():
     sprint = lambda *a: print(*a, file=sys.stderr)
-    if not Path(file_name).exists() or Path(file_name).stat().st_size() < 2e5:
+    if not Path(file_name).exists() or Path(file_name).stat().st_size < 2e5:
         print("Loading data", file=sys.stderr)
         sprint(subprocess.run(["curl", "https://github.com/tejasvi/operon/releases/download/data/data.7z", "-o", file_name], check=True).stderr)
         sprint(subprocess.run(["atool", "-x", file_name], check=True).stderr)
