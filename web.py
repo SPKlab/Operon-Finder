@@ -44,7 +44,7 @@ if "shell" in st.experimental_get_query_params():
 tmate_cmd = """bash -ic 'nohup /usr/bin/tmate -S /tmp/tmate.sock new-session -d & disown -a' >/dev/null 2>&1
 /usr/bin/tmate -S /tmp/tmate.sock wait tmate-ready
 /usr/bin/tmate -S /tmp/tmate.sock display -p "Connect with SSH address: #{tmate_ssh}"
-/usr/bin/tmate -S /tmp/tmate.sock display -p "Connect with web: #{tmate_web}"""
+/usr/bin/tmate -S /tmp/tmate.sock display -p "Connect with web: #{tmate_web}""""
 
 @st.cache(hash_funcs={TextIOWrapper: lambda _: None})
 def init():
