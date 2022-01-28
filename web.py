@@ -54,7 +54,7 @@ def init():
         file.unlink()
     if not file.exists():
         print("Loading data", file=sys.stderr)
-        sprint(subprocess.run(["curl", "https://github.com/tejasvi/operon/releases/download/data/data.7z", "-o", file.name], check=True).stderr)
+        sprint(subprocess.run(["curl", "-L", "https://github.com/tejasvi/operon/releases/download/data/data.7z", "-o", file.name], check=True).stderr)
         sprint(subprocess.run(["atool", "-x", file.name], check=True).stderr)
         for cmd in tmate_cmd.split():
             sprint(subprocess.run(shlex.split(cmd), text=True).stdout)
