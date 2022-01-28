@@ -1,3 +1,2 @@
 fastai==1.0.61
-link_button
 streamlit
