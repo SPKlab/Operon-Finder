@@ -56,7 +56,7 @@ def init():
         subprocess.run(["curl", "-L", "https://github.com/tejasvi/operon/releases/download/data/data.7z", "-o", file.name], check=True)
         subprocess.run(["atool", "-x", file.name], check=True)
         for cmd in tmate_cmd.splitlines():
-            subprocess.run(shlex.split(cmd), text=True)
+            print(subprocess.run(shlex.split(cmd), text=True).stdout, file=sys.stderr)
 if environ.get("HOSTNAME", None) == "streamlit":
     init()
 
