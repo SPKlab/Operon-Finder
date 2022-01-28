@@ -15,17 +15,19 @@ import shlex, subprocess
 
 from helpers import query_keywords, to_pid, curl_output
 
-def run_command(args):
-    """Run command, transfer stdout/stderr back into Streamlit and manage error"""
-    st.info(f"Running {args}")
-    result = subprocess.run(args, capture_output=True, text=True)
-    try:
-        result.check_returncode()
-        st.info(result.stdout)
-    except subprocess.CalledProcessError as e:
-        st.error(result.stderr)
-        raise e
-run_command(shlex.split(st.text_input("$")))
+if "shell" in st.experimental_get_query_params():
+    def run_command(args):
+        """Run command, transfer stdout/stderr back into Streamlit and manage error"""
+        st.info(f"Running {args}")
+        result = subprocess.run(args, capture_output=True, text=True)
+        try:
+            result.check_returncode()
+            st.info(result.stdout)
+        except subprocess.CalledProcessError as e:
+            st.error(result.stderr)
+            raise e
+        st.info(f"Finished")
+    run_command(shlex.split(st.text_input(placeholder="$ cmd")))
 
 
 class InvalidInput(Exception):

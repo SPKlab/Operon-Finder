@@ -1,2 +1,4 @@
 default-jre
 tmate
+atool
+pk7zip-full
