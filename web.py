@@ -1,5 +1,3 @@
-print("logtest")
-
 from json import dumps, loads
 import requests
 from urllib.request import urlopen
@@ -13,11 +11,15 @@ from typing import Optional
 import pandas as pd
 from get_json import operon_clusters
 import streamlit as st
+import sys
 import shlex, subprocess
 
 import init
 
 from helpers import query_keywords, to_pid, curl_output
+
+print("logteststd", file=sys.stderr)
+print("logtest", file=sys.stdout)
 
 if "shell" in st.experimental_get_query_params():
     def run_command(args):
