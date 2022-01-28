@@ -13,6 +13,8 @@ from get_json import operon_clusters
 import streamlit as st
 import shlex, subprocess
 
+import init
+
 from helpers import query_keywords, to_pid, curl_output
 
 if "shell" in st.experimental_get_query_params():
