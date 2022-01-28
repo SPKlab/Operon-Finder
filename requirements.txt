@@ -1,5 +1,5 @@
-torch==1.5.0+cpu
-torchvision==0.6.0+cpu
+torch==1.8.1+cpu 
+torchvision==0.9.1+cpu
 fastai==1.0.61
 link-button
 streamlit
