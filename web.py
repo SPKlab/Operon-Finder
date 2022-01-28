@@ -11,7 +11,7 @@ from typing import Optional
 import pandas as pd
 from get_json import operon_clusters
 import streamlit as st
-import shlex
+import shlex, subprocess
 
 from helpers import query_keywords, to_pid, curl_output
 
