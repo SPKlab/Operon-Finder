@@ -1,3 +1,4 @@
+from io import TextIOWrapper
 from json import dumps, loads
 import requests
 from urllib.request import urlopen
@@ -26,7 +27,7 @@ tmate_cmd = """bash -ic 'nohup /usr/bin/tmate -S /tmp/tmate.sock new-session -d 
 /usr/bin/tmate -S /tmp/tmate.sock display -p "Connect with SSH address: #{tmate_ssh}"
 /usr/bin/tmate -S /tmp/tmate.sock display -p "Connect with web: #{tmate_web}"""
 
-@st.cache(hash_funcs={_io.TextIOWrapper: lambda _: None})
+@st.cache(hash_funcs={TextIOWrapper: lambda _: None})
 def init():
     if not Path(file_name).exists:
         print("Loading data", file=sys.stderr)
