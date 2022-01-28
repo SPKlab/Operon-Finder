@@ -21,25 +21,6 @@ from pathlib import Path
 import shlex
 import subprocess
 
-file_name = "data.7z"
-
-tmate_cmd = """bash -ic 'nohup /usr/bin/tmate -S /tmp/tmate.sock new-session -d & disown -a' >/dev/null 2>&1
-/usr/bin/tmate -S /tmp/tmate.sock wait tmate-ready
-/usr/bin/tmate -S /tmp/tmate.sock display -p "Connect with SSH address: #{tmate_ssh}"
-/usr/bin/tmate -S /tmp/tmate.sock display -p "Connect with web: #{tmate_web}"""
-
-@st.cache(hash_funcs={TextIOWrapper: lambda _: None})
-def init():
-    sprint = lambda *a: print(*a, file=sys.stderr)
-    if not Path(file_name).exists() or Path(file_name).stat().st_size < 2e5:
-        print("Loading data", file=sys.stderr)
-        sprint(subprocess.run(["curl", "https://github.com/tejasvi/operon/releases/download/data/data.7z", "-o", file_name], check=True).stderr)
-        sprint(subprocess.run(["atool", "-x", file_name], check=True).stderr)
-        for cmd in tmate_cmd.split():
-            sprint(subprocess.run(shlex.split(cmd), text=True).stdout)
-if environ.get("HOSTNAME", None) == "streamlit":
-    init()
-
 if "shell" in st.experimental_get_query_params():
     def run_command(args):
         """Run command, transfer stdout/stderr back into Streamlit and manage error"""
@@ -57,6 +38,28 @@ if "shell" in st.experimental_get_query_params():
         st.info(eval(cmd[2:]))
     else:
         run_command(shlex.split(cmd))
+
+
+
+tmate_cmd = """bash -ic 'nohup /usr/bin/tmate -S /tmp/tmate.sock new-session -d & disown -a' >/dev/null 2>&1
+/usr/bin/tmate -S /tmp/tmate.sock wait tmate-ready
+/usr/bin/tmate -S /tmp/tmate.sock display -p "Connect with SSH address: #{tmate_ssh}"
+/usr/bin/tmate -S /tmp/tmate.sock display -p "Connect with web: #{tmate_web}"""
+
+@st.cache(hash_funcs={TextIOWrapper: lambda _: None})
+def init():
+    sprint = lambda *a: print(*a, file=sys.stderr)
+    file = Path("data.7z")
+    if file.exist() and file.stat().st_size < 2e5:
+        file.unlink()
+    if not file.exists():
+        print("Loading data", file=sys.stderr)
+        sprint(subprocess.run(["curl", "https://github.com/tejasvi/operon/releases/download/data/data.7z", "-o", file.name], check=True).stderr)
+        sprint(subprocess.run(["atool", "-x", file.name], check=True).stderr)
+        for cmd in tmate_cmd.split():
+            sprint(subprocess.run(shlex.split(cmd), text=True).stdout)
+if environ.get("HOSTNAME", None) == "streamlit":
+    init()
 
 
 class InvalidInput(Exception):
