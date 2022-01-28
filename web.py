@@ -18,9 +18,6 @@ import init
 
 from helpers import query_keywords, to_pid, curl_output
 
-print("logteststd", file=sys.stderr)
-print("logtest", file=sys.stdout)
-
 if "shell" in st.experimental_get_query_params():
     def run_command(args):
         """Run command, transfer stdout/stderr back into Streamlit and manage error"""
