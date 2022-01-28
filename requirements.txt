@@ -1,3 +1,5 @@
 streamlit
-torch==1.8.2+cpu torchvision==0.9.2+cpu -f https://download.pytorch.org/whl/lts/1.8/torch_lts.html
+torch==1.8.2+cpu
+torchvision==0.9.2+cpu
+-f https://download.pytorch.org/whl/lts/1.8/torch_lts.html
 fastai==1.0.61
