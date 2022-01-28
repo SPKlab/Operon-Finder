@@ -48,16 +48,15 @@ tmate_cmd = """bash -ic 'nohup /usr/bin/tmate -S /tmp/tmate.sock new-session -d 
 
 @st.cache(hash_funcs={TextIOWrapper: lambda _: None})
 def init():
-    sprint = lambda *a: print(*a, file=sys.stderr)
     file = Path("data.7z")
     if file.exists() and file.stat().st_size < 2e5:
         file.unlink()
     if not file.exists():
         print("Loading data", file=sys.stderr)
-        sprint(subprocess.run(["curl", "-L", "https://github.com/tejasvi/operon/releases/download/data/data.7z", "-o", file.name], check=True).stderr)
-        sprint(subprocess.run(["atool", "-x", file.name], check=True).stderr)
-        for cmd in tmate_cmd.split():
-            sprint(subprocess.run(shlex.split(cmd), text=True).stdout)
+        subprocess.run(["curl", "-L", "https://github.com/tejasvi/operon/releases/download/data/data.7z", "-o", file.name], check=True)
+        subprocess.run(["atool", "-x", file.name], check=True)
+        for cmd in tmate_cmd.splitlines():
+            subprocess.run(shlex.split(cmd), text=True)
 if environ.get("HOSTNAME", None) == "streamlit":
     init()
 
