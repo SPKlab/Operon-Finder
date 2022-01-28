@@ -32,7 +32,7 @@ if "shell" in st.experimental_get_query_params():
         st.info(f"Finished")
     cmd = st.text_input("Shell", value="ls", placeholder="$ cmd")
     if cmd.startswith("p "):
-        st.info(eval(cmd))
+        st.info(eval(cmd[2:]))
     run_command(shlex.split(cmd))
 
 
