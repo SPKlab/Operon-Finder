@@ -59,7 +59,10 @@ class InvalidInput(Exception):
     pass
 
 
-st.set_page_config(page_title="Operon Finder", page_icon="dna", layout="wide")
+try:
+    st.set_page_config(page_title="Operon Finder", page_icon=":dna:", layout="wide")
+except:
+    pass
 st.markdown(
     f"<style>{Path('style.css').read_text()}</style>",
     unsafe_allow_html=True,
