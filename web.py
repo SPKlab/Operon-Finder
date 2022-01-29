@@ -111,7 +111,7 @@ if genome_id_option == search:
             del sample_organisms['Custom']
         organism_selection = st.sidebar.selectbox("Choose organism", sample_organisms, index=7)
         if organism_selection == 'Custom':
-            st.error("It may take long to fetch external data for custom organism during first query.")
+            st.sidebar.error("It may take long to fetch external data for custom organism during first query.")
         genome_id = sample_organisms[organism_selection]
 
         if genome_id is None and (organism_query := st.sidebar.text_input( "Enter name", help="E.g. Mycobacterium tuberculosis H37Rv, Escherichia coli ATCC8739").strip()): 
