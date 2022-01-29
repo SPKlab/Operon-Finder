@@ -109,7 +109,7 @@ if genome_id_option == search:
         }
         if not streamlit_cloud:
             del sample_organisms['Custom']
-        organism_selection = st.sidebar.selectbox("Choose organism", sample_organisms, index=1)
+        organism_selection = st.sidebar.selectbox("Choose organism", sample_organisms, index=3)
         genome_id = sample_organisms[organism_selection]
 
         if genome_id is None and (organism_query := st.sidebar.text_input( "Enter name", help="E.g. Mycobacterium tuberculosis H37Rv, Escherichia coli ATCC8739").strip()): 
