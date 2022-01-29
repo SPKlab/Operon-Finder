@@ -27,28 +27,20 @@ def main(genome_id: str, progress_bar) -> list[int]:
     data = ImageDataBunch.from_folder(path, test=f'test_operons/{genome_id}')
     total = sum(1 for _ in Path(path).joinpath(f'test_operons/{genome_id}').iterdir())
     
-    makedirs('.json_files/operons/', exist_ok=True)
-    predict_json = Path(f'.json_files/operons/{genome_id}.json')
-    if predict_json.exists():
-        predict_list = loads(predict_json.read_bytes())
-    else:
-        predict_list = []
+    predict_list = []
 
-        print("Enter predict")
-        c = 0
-        for i in range(len(data.test_ds)):
-            filename = str(data.test_ds.items[i]).split('/')[-1]
-            fsplit = filename.removesuffix('.jpg').split('_')
-            c += 1
-            progress_bar.progress(min(c/total*0.80 + .19, 0.99))
-            is_operon = predictor(i, data)
-            if is_operon:
-                fname = fsplit[0]
-                predict_list.append(int(fname.split(".")[-1]))
-        print("End predict")
-    
-        with open(predict_json, 'w') as f:
-            dump(predict_list, f)
+    print("Enter predict")
+    c = 0
+    for i in range(len(data.test_ds)):
+        filename = str(data.test_ds.items[i]).split('/')[-1]
+        fsplit = filename.removesuffix('.jpg').split('_')
+        c += 1
+        progress_bar.progress(min(c/total*0.80 + .19, 0.99))
+        is_operon = predictor(i, data)
+        if is_operon:
+            fname = fsplit[0]
+            predict_list.append(int(fname.split(".")[-1]))
+    print("End predict")
         
     progress_bar.empty()
     return predict_list

@@ -13,8 +13,10 @@ import streamlit as st
 from JsonToCoordinates import parse_string_scores
 from test import main
 
-@cache
-def operon_clusters(genome_id: str, pegs: frozenset) -> list[set[int]]:
+def get_operons(genome_id:str, pegs: frozenset) -> list[int]:
+    placeholder = st.empty()
+    placeholder.info("Please wait while the model is analyses the genome.")
+
     progress_bar = st.progress(0.05)
     genome_data_changed = False
     gene_figure_name = {f"fig|{genome_id}.peg.{i}" for i in pegs}
@@ -87,7 +89,7 @@ def operon_clusters(genome_id: str, pegs: frozenset) -> list[set[int]]:
     if genome_data_changed:
         Path(test_operons_path).unlink(missing_ok=True)
 
-    if not Path(test_operons_path).exists():
+    if not Path(test_operons_path).exists() or len(list(Path(test_operons_path).glob('*.jpg'))) < len(pegs) - 10:
         coords_filename = to_coordinates(json_folder, genome_id)
         print("Coordinates created")
 
@@ -97,7 +99,21 @@ def operon_clusters(genome_id: str, pegs: frozenset) -> list[set[int]]:
         Path(coords_filename).unlink()
         progress_bar.progress(0.20)
 
-    operons = main(genome_id, progress_bar)
+    placeholder.empty()
+
+    return main(genome_id, progress_bar)
+
+@cache
+def operon_clusters(genome_id: str, pegs: frozenset) -> list[set[int]]:
+    makedirs('.json_files/operons/', exist_ok=True)
+    predict_json = Path(f'.json_files/operons/{genome_id}.json')
+    if predict_json.exists():
+        operons = loads(predict_json.read_bytes())
+    else:
+        operons = get_operons(genome_id, pegs)
+        with open(predict_json, 'w') as f:
+            dump(operons, f)
+
     peg_next  = {}
     prev = -1
     for peg in sorted(pegs):
