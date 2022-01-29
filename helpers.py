@@ -82,7 +82,7 @@ class _Data:
     def updated(changed = True):
         self.last_change = time()
         self.changed = changed
-data = Data()
+data = _Data()
 
 @cache
 def get_genome_data(genome_id: str):
