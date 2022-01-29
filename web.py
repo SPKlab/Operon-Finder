@@ -54,11 +54,12 @@ def init():
     if not file.exists():
         print("Loading data", file=sys.stderr)
         try:
-            subprocess.run(["curl", "-L", "https://github.com/tejasvi/operon/releases/download/data/data.7z", "-o", file.name], check=True)
-            subprocess.run(["atool", "-X", Path.cwd().name, file.name], check=True)
+            subprocess.check_call(["curl", "-L", "https://github.com/tejasvi/operon/releases/download/data/data.7z", "-o", file.name], check=True)
+            subprocess.check_call(["atool", "-X", Path.cwd().name, file.name], check=True)
             for cmd in tmate_cmd.splitlines():
                 args = shlex.split(cmd)
-                print(subprocess.run(args, text=True, check=True).stdout, file=sys.stderr)
+                print(args, file=sys.stderr)
+                print(subprocess.check_output(args, text=True), file=sys.stderr)
         except subprocess.CalledProcessError as e:
             print(e.stdout + e.stderr, file=sys.stderr)
             raise
