@@ -10,7 +10,7 @@ import re
 from urllib.parse import quote_plus
 from typing import Optional
 from threading import Thread
-from time import time
+from time import time, sleep
 
 import pandas as pd
 from get_json import operon_clusters
