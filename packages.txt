@@ -5,3 +5,4 @@ p7zip-full
 curl
 htop
 wget
+neovim

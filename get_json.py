@@ -9,6 +9,7 @@ from glob import glob
 from subprocess import run, check_output
 from concurrent.futures import ThreadPoolExecutor
 from json import loads, dump
+from helpers import data
 
 import streamlit as st
 from JsonToCoordinates import parse_string_scores
@@ -21,7 +22,7 @@ def get_operons(genome_id:str, pegs: frozenset) -> list[int]:
     genome_data_changed = False
     gene_figure_name = {f"fig|{genome_id}.peg.{i}" for i in pegs}
 
-    json_folder = f".json_files/compare_region/{genome_id}"
+    json_folder = f".json_files/{genome_id}/compare_region"
     makedirs(json_folder, exist_ok=True)
     if len(list(Path(json_folder).iterdir())) < len(gene_figure_name)-50:
         with ThreadPoolExecutor(30, "JSONFetcher") as executor:
@@ -51,6 +52,7 @@ def get_operons(genome_id:str, pegs: frozenset) -> list[int]:
 
     test_operons_path = f"images_custom/test_operons/{genome_id}"
     if genome_data_changed:
+        data.updated()
         Path(test_operons_path).unlink(missing_ok=True)
 
     if not Path(test_operons_path).exists() or len(list(Path(test_operons_path).glob('*.jpg'))) < len(pegs) - 50:
@@ -70,14 +72,15 @@ def get_operons(genome_id:str, pegs: frozenset) -> list[int]:
 
 @cache
 def operon_clusters(genome_id: str, pegs: frozenset) -> list[set[int]]:
-    makedirs('.json_files/operons/', exist_ok=True)
-    predict_json = Path(f'.json_files/operons/{genome_id}.json')
+    makedirs('.json_files/{genome_id}', exist_ok=True)
+    predict_json = Path(f'.json_files/{genome_id}/operons.json')
     if predict_json.exists():
         operons = loads(predict_json.read_bytes())
     else:
         operons = get_operons(genome_id, pegs)
         with open(predict_json, 'w') as f:
             dump(operons, f)
+        data.updated()
 
     peg_next  = {}
     prev = -1

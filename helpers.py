@@ -5,6 +5,7 @@ from functools import cache
 from subprocess import check_output
 from json import dump, dumps, load, loads
 from typing import Iterable, Optional
+from time import time
 
 from attr import dataclass
 
@@ -74,10 +75,19 @@ def fetch_string_scores(genome_id: str) -> None:
 
         path.unlink()
 
+class _Data:
+    def __init__():
+        self.last_change = time()
+        self.changed = False
+    def updated(changed = True):
+        self.last_change = time()
+        self.changed = changed
+data = Data()
+
 @cache
 def get_genome_data(genome_id: str):
-    genome_data_dir = '.json_files/genome'
-    genome_data_path = Path(f'{genome_data_dir}/{genome_id}.json')
+    genome_data_dir = '.json_files/{genome_id}'
+    genome_data_path = Path(f'{genome_data_dir}/genome.json')
     if genome_data_path.exists():
         genome_data = loads(genome_data_path.read_bytes())
     else:
@@ -92,4 +102,5 @@ def get_genome_data(genome_id: str):
         makedirs(genome_data_dir, exist_ok=True)
         with open(genome_data_path, 'w') as f:
             dump(genome_data, f)
+        data.updated()
     return genome_data

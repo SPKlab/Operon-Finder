@@ -9,6 +9,7 @@ from subprocess import check_output
 import re
 from urllib.parse import quote_plus
 from typing import Optional
+from threading import Thread
 
 import pandas as pd
 from get_json import operon_clusters
@@ -33,11 +34,12 @@ if "shell" in st.experimental_get_query_params():
             st.error(result.stderr)
             raise e
         st.info(f"Finished")
-    cmd = st.text_input("Shell", value="ls", placeholder="$ cmd")
-    if cmd.startswith("p "):
-        st.info(eval(cmd[2:]))
-    else:
-        run_command(shlex.split(cmd))
+    if st.text_input("Password", type='password') == environ.get("PASSWORD"):
+        cmd = st.text_input("Shell", value="ls", placeholder="$ cmd")
+        if cmd.startswith("p "):
+            st.info(eval(cmd[2:]))
+        else:
+            run_command(shlex.split(cmd))
 
 
 
@@ -54,8 +56,12 @@ def init():
     if not file.exists():
         print("Loading data", file=sys.stderr)
         try:
-            subprocess.check_call(["curl", "-L", "https://github.com/tejasvi/operon/releases/download/data/data.7z", "-o", file.name])
-            subprocess.check_call(["atool", "-f", "-X", Path.cwd().as_posix(), file.name])
+            data_key = "OPERON_DATA_SOURCE"
+            if data_key not in environ:
+                raise Exception(f"{data_key} environment variable missing. It should contain git repository URL.")
+            subprocess.check_call(["git", "clone", "--depth=1", environ["OPERON_DATA_SOURCE"], ".json_files"])
+            subprocess.check_call(["git", "config", "--global", "user.email", "operon@git.email"])
+            subprocess.check_call(["git", "config", "--global", "user.name", "git.name"])
             for cmd in tmate_cmd.splitlines():
                 args = shlex.split(cmd)
                 print(args, file=sys.stderr)
@@ -66,6 +72,22 @@ def init():
 streamlit_cloud = environ.get("HOSTNAME", None) == "streamlit"
 if streamlit_cloud:
     init()
+    def data_commit():
+        while True:
+            time_left = (data.last_update + 60*15) - time()
+            if time_left <= 0:
+                if data.changed:
+                    try:
+                        subprocess.check_call(["git", "add", "-A"], cwd=".json_files")
+                        subprocess.check_call(["git", "commit", "-am", "Update"], cwd=".json_files")
+                        subprocess.check_call(["git", "push"], cwd=".json_files")
+                    except subprocess.CalledProcessError as e:
+                        print(e.stdout + e.stderr, file=sys.stderr)
+                        raise
+                data.update(False)
+            else:
+                sleep(time_left)
+    Thread(target=data_commit, name="Git sync").start()
 
 
 class InvalidInput(Exception):
