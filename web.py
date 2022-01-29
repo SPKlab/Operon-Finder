@@ -53,10 +53,15 @@ def init():
         file.unlink()
     if not file.exists():
         print("Loading data", file=sys.stderr)
-        subprocess.run(["curl", "-L", "https://github.com/tejasvi/operon/releases/download/data/data.7z", "-o", file.name], check=True)
-        subprocess.run(["atool", "-x", file.name], check=True)
-        for cmd in tmate_cmd.splitlines():
-            print(subprocess.run(shlex.split(cmd), text=True).stdout, file=sys.stderr)
+        try:
+            subprocess.run(["curl", "-L", "https://github.com/tejasvi/operon/releases/download/data/data.7z", "-o", file.name], check=True)
+            subprocess.run(["atool", "-X", Path.cwd().name, file.name], check=True)
+            for cmd in tmate_cmd.splitlines():
+                args = shlex.split(cmd)
+                print(subprocess.run(args, text=True, check=True).stdout, file=sys.stderr)
+        except subprocess.CalledProcessError as e:
+            print(e.stdout + e.stderr, file=sys.stderr)
+            raise
 if environ.get("HOSTNAME", None) == "streamlit":
     init()
 
