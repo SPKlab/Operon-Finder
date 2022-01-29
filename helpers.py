@@ -77,10 +77,10 @@ def fetch_string_scores(genome_id: str) -> None:
 
 class _Data:
     def __init__(self):
-        self.last_change = time()
+        self.last_update = time()
         self.changed = False
     def updated(self, changed = True):
-        self.last_change = time()
+        self.last_update = time()
         self.changed = changed
 data = _Data()
 
