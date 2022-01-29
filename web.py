@@ -17,7 +17,7 @@ import streamlit as st
 import sys
 import shlex
 
-from helpers import query_keywords, to_pid, curl_output
+from helpers import query_keywords, to_pid, curl_output, data
 from pathlib import Path
 import shlex
 import subprocess
