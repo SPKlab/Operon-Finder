@@ -23,7 +23,7 @@ def get_operons(genome_id:str, pegs: frozenset) -> list[int]:
 
     json_folder = f".json_files/compare_region/{genome_id}"
     makedirs(json_folder, exist_ok=True)
-    if sum(1 for _ in Path(json_folder).iterdir()) < len(gene_figure_name)-10:
+    if len(list(Path(json_folder).iterdir())) < len(gene_figure_name)-50:
         with ThreadPoolExecutor(30, "JSONFetcher") as executor:
             for gene in gene_figure_name:
                 json_path = f"{json_folder}/{gene}.json"
@@ -53,7 +53,7 @@ def get_operons(genome_id:str, pegs: frozenset) -> list[int]:
     if genome_data_changed:
         Path(test_operons_path).unlink(missing_ok=True)
 
-    if not Path(test_operons_path).exists() or len(list(Path(test_operons_path).glob('*.jpg'))) < len(pegs) - 10:
+    if not Path(test_operons_path).exists() or len(list(Path(test_operons_path).glob('*.jpg'))) < len(pegs) - 50:
         coords_filename = to_coordinates(json_folder, genome_id)
         print("Coordinates created")
 
