@@ -1,4 +1,5 @@
 from concurrent.futures import ProcessPoolExecutor
+from helpers import fetch_string_scores
 import multiprocessing
 import json
 from tempfile import NamedTemporaryFile
@@ -27,6 +28,8 @@ def normalize_refseq(s: str):
 
 import re
 def parse_string_scores(genome_id: str)->dict[str,float]:
+    fetch_string_scores(genome_id)
+
     with open(f'./genomes/{genome_id}.PATRIC.gff') as f:
         next_dic: dict[str, str] = {}
         prev = 'None'
@@ -54,7 +57,14 @@ def parse_string_scores(genome_id: str)->dict[str,float]:
     return string
 
 def to_coordinates(json_dir: str, genome_id: str) -> str:
-    string = parse_string_scores(genome_id)
+    str_json_file = Path(f'.json_dir/string/{genome_id}.json')
+    if str_json_file.exists():
+        with open(str_json_file) as f:
+           string = json.load(str_json_file, f)
+    else:
+        string = parse_string_scores(genome_id)
+        with open(str_json_file, 'w') as f:
+           json.dump(string, f)
 
 ###
     directory = f'coords/{genome_id}'

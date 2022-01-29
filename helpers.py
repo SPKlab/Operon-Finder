@@ -39,6 +39,40 @@ def to_pid( genome_id: str) -> tuple[dict[int, PatricMeta], int]:
 def query_keywords(query: str) -> set[str]:
     return {qs.lower() for qs in query.split(' ') if qs}
 
+def fetch_string_scores(genome_id: str) -> None:
+    genome_data_changed = False
+
+    genome_file_path = Path("genomes/" + genome_id + ".PATRIC.gff")
+    if not genome_file_path.exists():
+        run(
+            [
+                "wget",
+                f"ftp://ftp.patricbrc.org/genomes/{genome_id}/{genome_id}.PATRIC.gff",
+                "-O",
+                genome_file_path,
+            ]
+        )
+
+    organism = genome_id.split(".")[0]
+
+    if not glob("strings/" + organism + ".protein.links.v11.*.txt"):
+        raw_path = f"{organism}.protein.links.v11.5.txt.gz"
+        urlretrieve(
+            f"https://stringdb-static.org/download/protein.links.v11.5/{raw_path}",
+            raw_path,
+        )
+        path = Path(raw_path)
+
+        target_file_path = path.parent.joinpath("strings").joinpath(
+            path.name.removesuffix(".gz")
+        )
+        with open(path, "rb") as compressed_file, open(
+            target_file_path, "w", encoding="utf8"
+        ) as decompressed_file:
+            decom_str = decompress(compressed_file.read()).decode("utf-8")
+            decompressed_file.write(decom_str)
+
+        path.unlink()
 
 @cache
 def get_genome_data(genome_id: str):

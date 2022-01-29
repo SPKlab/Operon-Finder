@@ -15,7 +15,7 @@ from JsonToCoordinates import parse_string_scores
 
 def get_operons(genome_id:str, pegs: frozenset) -> list[int]:
     placeholder = st.empty()
-    placeholder.info("Please wait while the model is analyses the genome.")
+    placeholder.info("Please wait while we fetch the data and predict operons. It might take upto 15 minutes.")
 
     progress_bar = st.progress(0.05)
     genome_data_changed = False
@@ -23,7 +23,7 @@ def get_operons(genome_id:str, pegs: frozenset) -> list[int]:
 
     json_folder = f".json_files/compare_region/{genome_id}"
     makedirs(json_folder, exist_ok=True)
-    if sum(1 for _ in Path(json_folder).iterdir()) < len(gene_figure_name):
+    if sum(1 for _ in Path(json_folder).iterdir()) < len(gene_figure_name)-10:
         with ThreadPoolExecutor(30, "JSONFetcher") as executor:
             for gene in gene_figure_name:
                 json_path = f"{json_folder}/{gene}.json"
@@ -46,42 +46,6 @@ def get_operons(genome_id:str, pegs: frozenset) -> list[int]:
                     genome_data_changed = True
 
     progress_bar.progress(0.10)
-
-    genome_file_path = Path("genomes/" + genome_id + ".PATRIC.gff")
-    if not genome_file_path.exists():
-        run(
-            [
-                "wget",
-                f"ftp://ftp.patricbrc.org/genomes/{genome_id}/{genome_id}.PATRIC.gff",
-                "-O",
-                genome_file_path,
-            ]
-        )
-        genome_data_changed = True
-
-    organism = genome_id.split(".")[0]
-
-    if not glob("strings/" + organism + ".protein.links.v11.*.txt"):
-        raw_path = f"{organism}.protein.links.v11.5.txt.gz"
-        urlretrieve(
-            f"https://stringdb-static.org/download/protein.links.v11.5/{raw_path}",
-            raw_path,
-        )
-        path = Path(raw_path)
-
-        target_file_path = path.parent.joinpath("strings").joinpath(
-            path.name.removesuffix(".gz")
-        )
-        with open(path, "rb") as compressed_file, open(
-            target_file_path, "w", encoding="utf8"
-        ) as decompressed_file:
-            decom_str = decompress(compressed_file.read()).decode("utf-8")
-            decompressed_file.write(decom_str)
-
-        path.unlink()
-        genome_data_changed = True
-
-    progress_bar.progress(0.13)
 
     from JsonToCoordinates import to_coordinates
 
