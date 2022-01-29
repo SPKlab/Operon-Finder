@@ -49,7 +49,7 @@ def get_operons(genome_id:str, pegs: frozenset) -> list[int]:
             for i, future in enumerate(as_completed(tasks)):
                 progress_bar.progress(i/len(tasks)*0.50)
 
-    progress_bar.progress(0.30)
+    progress_bar.progress(0.50)
 
     from JsonToCoordinates import to_coordinates
 
