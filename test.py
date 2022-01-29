@@ -7,7 +7,9 @@ from fastai.metrics import accuracy
 from fastai.vision import ImageDataBunch, cnn_learner, models
 import streamlit as st
 
-path = 'images_custom/'
+path = 'images_custom'
+makedirs(f"{path}/train", exist_ok=True)
+Path(f"{path}/train/dummy.jpg").touch(exist_ok=True)
 
 # Load the data and predict Operon-pairs
 _data = ImageDataBunch.from_folder('images_ecoli', test='test_operons/')
