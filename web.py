@@ -63,7 +63,7 @@ def init():
                     except subprocess.CalledProcessError as e:
                         print(e.stdout + e.stderr, file=sys.stderr)
                         raise
-                data.update(False)
+                data.updated(False)
             else:
                 sleep(time_left)
     Thread(target=data_commit, name="Git sync").start()
