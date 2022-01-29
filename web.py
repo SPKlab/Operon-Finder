@@ -95,7 +95,6 @@ genome_id = None
 if genome_id_option == search:
     try:
         sample_organisms = {
-            'Custom': None,
             'Bacillus subtilis subsp. subtilis str. 168': '224308.43',
             'Corynebacterium glutamicum ATCC 13032': '196627.14',
             'Escherichia coli str. K-12 substr. MG1655': '511145.12',
@@ -106,10 +105,13 @@ if genome_id_option == search:
             'Mycobacterium tuberculosis H37Rv': '83332.12',
             'Mycobacterium avium subsp. paratuberculosis K-10': '262316.17',
             'Photobacterium profundum SS9': '298386.8',
+            'Custom': None,
         }
         if not streamlit_cloud:
             del sample_organisms['Custom']
-        organism_selection = st.sidebar.selectbox("Choose organism", sample_organisms, index=8)
+        organism_selection = st.sidebar.selectbox("Choose organism", sample_organisms, index=7)
+        if organism_selection == 'Custom':
+            st.error("It may take long to fetch external data for custom organism during first query.")
         genome_id = sample_organisms[organism_selection]
 
         if genome_id is None and (organism_query := st.sidebar.text_input( "Enter name", help="E.g. Mycobacterium tuberculosis H37Rv, Escherichia coli ATCC8739").strip()): 
