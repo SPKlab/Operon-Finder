@@ -46,33 +46,11 @@ if "shell" in st.experimental_get_query_params():
 
 tmate_cmd = """bash -ic 'nohup /usr/bin/tmate -S /tmp/tmate.sock new-session -d & disown -a' >/dev/null 2>&1
 /usr/bin/tmate -S /tmp/tmate.sock wait tmate-ready
-/usr/bin/tmate -S /tmp/tmate.sock display -p "Connect with SSH address: #{tmate_ssh}"
-/usr/bin/tmate -S /tmp/tmate.sock display -p "Connect with web: #{tmate_web}\""""
+/usr/bin/tmate -S /tmp/tmate.sock display -p "tmate SSH address: #{tmate_ssh}"
+/usr/bin/tmate -S /tmp/tmate.sock display -p "tmate web: #{tmate_web}\""""
 
 @st.cache(hash_funcs={TextIOWrapper: lambda _: None})
 def init():
-    file = Path("data.7z")
-    if file.exists() and file.stat().st_size < 2e5:
-        file.unlink()
-    if not file.exists():
-        print("Loading data", file=sys.stderr)
-        try:
-            data_key = "OPERON_DATA_SOURCE"
-            if data_key not in environ:
-                raise Exception(f"{data_key} environment variable missing. It should contain git repository URL.")
-            subprocess.check_call(["git", "clone", "--depth=1", environ["OPERON_DATA_SOURCE"], ".json_files"])
-            subprocess.check_call(["git", "config", "--global", "user.email", "operon@git.email"])
-            subprocess.check_call(["git", "config", "--global", "user.name", "git.name"])
-            for cmd in tmate_cmd.splitlines():
-                args = shlex.split(cmd)
-                print(args, file=sys.stderr)
-                print(subprocess.check_output(args, text=True), file=sys.stderr)
-        except subprocess.CalledProcessError as e:
-            print(e.stdout + e.stderr, file=sys.stderr)
-            raise
-streamlit_cloud = environ.get("HOSTNAME", None) == "streamlit"
-if streamlit_cloud:
-    init()
     def data_commit():
         while True:
             time_left = (data.last_update + 60*15) - time()
@@ -89,6 +67,27 @@ if streamlit_cloud:
             else:
                 sleep(time_left)
     Thread(target=data_commit, name="Git sync").start()
+
+    file = Path("data.7z")
+    if file.exists() and file.stat().st_size < 2e5:
+        file.unlink()
+    if not file.exists():
+        print("Loading data", file=sys.stderr)
+        try:
+            data_key = "OPERON_DATA_SOURCE"
+            if data_key not in environ:
+                raise Exception(f"{data_key} environment variable missing. It should contain git repository URL.")
+            subprocess.check_call(["git", "clone", "--depth=1", environ["OPERON_DATA_SOURCE"], ".json_files"])
+            subprocess.check_call(["git", "config", "--global", "user.email", "operon@git.email"])
+            subprocess.check_call(["git", "config", "--global", "user.name", "git.name"])
+            for cmd in tmate_cmd.splitlines():
+                print(subprocess.check_output(shlex.split(cmd), text=True), file=sys.stderr)
+        except subprocess.CalledProcessError as e:
+            print(e.stdout + e.stderr, file=sys.stderr)
+            raise
+streamlit_cloud = environ.get("HOSTNAME", None) == "streamlit"
+if streamlit_cloud:
+    init()
 
 
 class InvalidInput(Exception):
