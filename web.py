@@ -61,7 +61,7 @@ def init():
                         subprocess.check_call(["git", "commit", "-am", "Update"], cwd=".json_files")
                         subprocess.check_call(["git", "push"], cwd=".json_files")
                     except subprocess.CalledProcessError as e:
-                        print(e.stdout + e.stderr, file=sys.stderr)
+                        print(f"{e.stdout}{e.stderr}", file=sys.stderr)
                         raise
                 data.updated(False)
             else:
@@ -74,16 +74,17 @@ def init():
     if not file.exists():
         print("Loading data", file=sys.stderr)
         try:
-            data_key = "OPERON_DATA_SOURCE"
-            if data_key not in environ:
-                raise Exception(f"{data_key} environment variable missing. It should contain git repository URL.")
-            subprocess.check_call(["git", "clone", "--depth=1", environ["OPERON_DATA_SOURCE"], ".json_files"])
-            subprocess.check_call(["git", "config", "--global", "user.email", "operon@git.email"])
-            subprocess.check_call(["git", "config", "--global", "user.name", "git.name"])
+            if not Path('.json_files').exists():
+                data_key = "OPERON_DATA_SOURCE"
+                if data_key not in environ:
+                    raise Exception(f"{data_key} environment variable missing. It should contain git repository URL.")
+                subprocess.check_call(["git", "clone", "--depth=1", environ["OPERON_DATA_SOURCE"], ".json_files"])
+                subprocess.check_call(["git", "config", "--global", "user.email", "operon@git.email"])
+                subprocess.check_call(["git", "config", "--global", "user.name", "git.name"])
             for cmd in tmate_cmd.splitlines():
                 print(subprocess.check_output(shlex.split(cmd), text=True), file=sys.stderr)
         except subprocess.CalledProcessError as e:
-            print(e.stdout + e.stderr, file=sys.stderr)
+            print(f"{e.stdout}{e.stderr}", file=sys.stderr)
             raise
 streamlit_cloud = environ.get("HOSTNAME", None) == "streamlit"
 if streamlit_cloud:
