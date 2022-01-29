@@ -37,7 +37,7 @@ def main(genome_id: str, progress_bar) -> list[int]:
         filename = str(data.test_ds.items[i]).split('/')[-1]
         fsplit = filename.removesuffix('.jpg').split('_')
         c += 1
-        progress_bar.progress(min(c/total*0.80 + .19, 0.99))
+        progress_bar.progress(min(65 + c/total*35.0, 0.99))
         is_operon = predictor(i, data)
         if is_operon:
             fname = fsplit[0]

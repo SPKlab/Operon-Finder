@@ -7,7 +7,7 @@ from typing import Optional
 from urllib.request import urlretrieve
 from glob import glob
 from subprocess import run, check_output
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from json import loads, dump
 from helpers import data
 
@@ -25,7 +25,8 @@ def get_operons(genome_id:str, pegs: frozenset) -> list[int]:
     json_folder = f".json_files/{genome_id}/compare_region"
     makedirs(json_folder, exist_ok=True)
     if len(list(Path(json_folder).iterdir())) < len(gene_figure_name)-50:
-        with ThreadPoolExecutor(30, "JSONFetcher") as executor:
+        with ThreadPoolExecutor(60, "JSONFetcher") as executor:
+            tasks =[]
             for gene in gene_figure_name:
                 json_path = f"{json_folder}/{gene}.json"
                 if not Path(json_path).exists():
@@ -43,10 +44,12 @@ def get_operons(genome_id:str, pegs: frozenset) -> list[int]:
                         "-o",
                         json_path,
                     ]
-                    executor.submit(run, args)
+                    tasks.append(executor.submit(run, args))
                     genome_data_changed = True
+            for i, future in enumerate(as_completed(tasks)):
+                progress_bar.progress(i/len(tasks)*0.50)
 
-    progress_bar.progress(0.10)
+    progress_bar.progress(0.30)
 
     from JsonToCoordinates import to_coordinates
 
@@ -59,11 +62,11 @@ def get_operons(genome_id:str, pegs: frozenset) -> list[int]:
         coords_filename = to_coordinates(json_folder, genome_id)
         print("Coordinates created")
 
-        progress_bar.progress(0.15)
+        progress_bar.progress(0.55)
         makedirs(test_operons_path, exist_ok=True)
         run(["java", "CoordsToJpg.java", coords_filename, test_operons_path])
         Path(coords_filename).unlink()
-        progress_bar.progress(0.20)
+        progress_bar.progress(0.65)
 
     placeholder.empty()
 
@@ -72,7 +75,7 @@ def get_operons(genome_id:str, pegs: frozenset) -> list[int]:
 
 @cache
 def operon_clusters(genome_id: str, pegs: frozenset) -> list[set[int]]:
-    makedirs('.json_files/{genome_id}', exist_ok=True)
+    makedirs(f'.json_files/{genome_id}', exist_ok=True)
     predict_json = Path(f'.json_files/{genome_id}/operons.json')
     if predict_json.exists():
         operons = loads(predict_json.read_bytes())

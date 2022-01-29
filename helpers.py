@@ -86,7 +86,7 @@ data = _Data()
 
 @cache
 def get_genome_data(genome_id: str):
-    genome_data_dir = '.json_files/{genome_id}'
+    genome_data_dir = f'.json_files/{genome_id}'
     genome_data_path = Path(f'{genome_data_dir}/genome.json')
     if genome_data_path.exists():
         genome_data = loads(genome_data_path.read_bytes())
