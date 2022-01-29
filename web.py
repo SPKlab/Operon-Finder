@@ -120,7 +120,7 @@ if genome_id_option == search:
         sample_organisms = {}
         for p in Path('.json_files').glob('*/genome.json'):
             try:
-                sample_organisms[loads(p.read_bytes())[0]["genome_name"]] = p.parent.name
+                sample_organisms[loads(p.read_bytes())["docs"][0]["genome_name"]] = p.parent.name
             except Exception as e:
                 st.error(e)
         sample_organisms['Custom'] = None
