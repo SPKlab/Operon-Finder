@@ -104,7 +104,7 @@ if genome_id_option == search:
             'Listeria monocytogenes EGD-e': '169963.11',
             'Mycoplasma pneumoniae M129': '272634.6',
             'Mycobacterium tuberculosis H37Rv': '83332.12',
-            'Mycobacterium avium subsp. paratuberculosis K-10': '262316.17'
+            'Mycobacterium avium subsp. paratuberculosis K-10': '262316.17',
             'Photobacterium profundum SS9': '298386.8',
         }
         if not streamlit_cloud:
