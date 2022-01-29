@@ -76,10 +76,10 @@ def fetch_string_scores(genome_id: str) -> None:
         path.unlink()
 
 class _Data:
-    def __init__():
+    def __init__(self):
         self.last_change = time()
         self.changed = False
-    def updated(changed = True):
+    def updated(self, changed = True):
         self.last_change = time()
         self.changed = changed
 data = _Data()
