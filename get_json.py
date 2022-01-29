@@ -8,10 +8,10 @@ from urllib.request import urlretrieve
 from glob import glob
 from subprocess import run, check_output
 from concurrent.futures import ThreadPoolExecutor
+from json import loads, dump
 
 import streamlit as st
 from JsonToCoordinates import parse_string_scores
-from test import main
 
 def get_operons(genome_id:str, pegs: frozenset) -> list[int]:
     placeholder = st.empty()
@@ -101,6 +101,7 @@ def get_operons(genome_id:str, pegs: frozenset) -> list[int]:
 
     placeholder.empty()
 
+    from test import main
     return main(genome_id, progress_bar)
 
 @cache

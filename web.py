@@ -63,7 +63,8 @@ def init():
         except subprocess.CalledProcessError as e:
             print(e.stdout + e.stderr, file=sys.stderr)
             raise
-if environ.get("HOSTNAME", None) == "streamlit":
+streamlit_cloud = environ.get("HOSTNAME", None) == "streamlit"
+if streamlit_cloud:
     init()
 
 
@@ -94,6 +95,8 @@ genome_id = None
 if genome_id_option == search:
     try:
         sample_organisms = {'Custom': None, 'Escherichia coli str. K-12 substr. MG1655': '511145.12', 'Corynebacterium glutamicum ATCC 13032': '196627.14', 'Photobacterium profundum SS9': '298386.8', 'Bacillus subtilis subsp. subtilis str. 168': '224308.43', 'Legionella pneumophila str. Paris': '297246.15', 'Listeria monocytogenes EGD-e': '169963.11', 'Helicobacter pylori 26695': '85962.47', 'Mycoplasma pneumoniae M129': '272634.6', 'Mycobacterium tuberculosis H37Rv': '83332.12', 'Mycobacterium avium subsp. paratuberculosis K-10': '262316.17'}
+        if not streamlit_cloud:
+            del sample_organisms['Custom']
         organism_selection = st.sidebar.selectbox("Choose organism", sample_organisms, index=1)
         genome_id = sample_organisms[organism_selection]
 
