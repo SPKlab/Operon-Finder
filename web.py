@@ -22,6 +22,15 @@ from helpers import query_keywords, to_pid, curl_output, data
 from pathlib import Path
 import shlex
 import subprocess
+import streamlit.components.v1 as components
+
+components.html("""
+<h1>TESTING</h1>
+<script>
+    console.log(window.parent.parent);
+    setTimeout(_=>window.parent.parent.postMessage("hi", "*"), 2000);
+</script>
+""")
 
 if "shell" in st.experimental_get_query_params():
     def run_command(args):
