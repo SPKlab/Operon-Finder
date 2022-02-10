@@ -327,4 +327,10 @@ if submit:
     else:
         st.error(f"No matching clusters found")
 
-components.html("""<script>window.parent.parent.postMessage("appLoaded", "*");</script>""")
+components.html("""<script>
+/* Components live in their Iframe. Streamlit's context is the first parent.
+Find higher parents for each enclosing IFrames.
+Streamlit share adds another iframe on top. */
+const p = window.parent.parent;
+[p, p.parent].forEach(p=>p.postMessage("appLoaded", "*"));</script>
+""")
