@@ -50,7 +50,7 @@ tmate_cmd = """bash -ic 'nohup /usr/bin/tmate -S /tmp/tmate.sock new-session -d 
 /usr/bin/tmate -S /tmp/tmate.sock display -p "tmate web: #{tmate_web}\""""
 
 @st.cache(hash_funcs={TextIOWrapper: lambda _: None})
-def init():
+def setup():
     def data_commit():
         while True:
             time_left = (data.last_update + 60*15) - time()
@@ -87,8 +87,6 @@ def init():
             print(f"{e.stdout}{e.stderr}", file=sys.stderr)
             raise
 streamlit_cloud = environ.get("HOSTNAME", None) == "streamlit"
-if streamlit_cloud:
-    init()
 
 
 class InvalidInput(Exception):
@@ -113,6 +111,9 @@ st.sidebar.markdown("### Select genome")
 manual = "Specify genome ID"
 search = "Search genomes"
 genome_id_option = st.sidebar.radio("", (search, manual))
+
+if streamlit_cloud:
+    setup()
 
 genome_id = None
 if genome_id_option == search:
