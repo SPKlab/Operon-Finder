@@ -57,7 +57,7 @@ def parse_string_scores(genome_id: str)->dict[str,float]:
     return string
 
 def to_coordinates(json_dir: str, genome_id: str) -> str:
-    str_json_file = Path(f'.json_dir/string/{genome_id}.json')
+    str_json_file = Path(f'.json_files/string/{genome_id}.json')
     if str_json_file.exists():
         with open(str_json_file) as f:
            string = json.load(str_json_file, f)
