@@ -2,7 +2,7 @@ from collections import namedtuple
 from os import makedirs, mkdir
 from pathlib import Path
 from functools import cache
-from subprocess import check_output
+from subprocess import run, check_output
 from json import dump, dumps, load, loads
 from typing import Iterable, Optional
 from time import time
