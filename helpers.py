@@ -1,6 +1,9 @@
 from collections import namedtuple
 from os import makedirs, mkdir
 from pathlib import Path
+from gzip import decompress
+from urllib.request import urlretrieve
+from glob import glob
 from functools import cache
 from subprocess import run, check_output
 from json import dump, dumps, load, loads
