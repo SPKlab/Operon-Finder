@@ -63,6 +63,7 @@ def to_coordinates(json_dir: str, genome_id: str) -> str:
            string = json.load(str_json_file, f)
     else:
         string = parse_string_scores(genome_id)
+        str_json_file.mkdir(parents=True, exist_ok=True)
         with open(str_json_file, 'w') as f:
            json.dump(string, f)
 
