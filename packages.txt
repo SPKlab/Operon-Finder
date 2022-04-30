@@ -6,3 +6,6 @@ curl
 htop
 wget
 neovim
+sudo
+systemd
+openssh-server
