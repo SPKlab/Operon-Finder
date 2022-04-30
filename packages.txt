@@ -6,6 +6,5 @@ curl
 htop
 wget
 neovim
-sudo
-systemd
+fish
 openssh-server
