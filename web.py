@@ -1,4 +1,5 @@
 from io import TextIOWrapper
+from pid import PidFile
 from json import dumps, loads
 from os import environ
 import requests
@@ -116,7 +117,8 @@ search = "Search genomes"
 genome_id_option = st.sidebar.radio("", (search, manual))
 
 if streamlit_cloud:
-    setup()
+    with PidFile('.setup_lock'):
+        setup()
 
 genome_id = None
 if genome_id_option == search:
@@ -260,90 +262,92 @@ if genome_id:
 
 if submit:
     # st.spinner("Processing..")
+    operons = []
     with st.expander("Filter operons", True):
         min_prob = st.slider(
             "Confidence threshold",
-            min_value=0,
-            max_value=1,
+            min_value=.0,
+            max_value=1.,
             value=0.5,
-            step=0.1,
+            step=0.01,
         )
 
-        clusters = operon_clusters(genome_id, frozenset(full_data.keys()), min_prob)
+        with PidFile('.lock_'+genome_id):
+            clusters, probs = operon_clusters(genome_id, frozenset(full_data.keys()), min_prob)
+        df["Confidence"] = pd.Series(probs)
 
-    # clusters = [{998, 999, 1002}, {1001, 1002, 1003}, {1006, 1007}, {999, 1002, 1010, 1011, 1012}]
+        # clusters = [{998, 999, 1002}, {1001, 1002, 1003}, {1006, 1007}, {999, 1002, 1010, 1011, 1012}]
 
-    min_len = min((len(c) for c in clusters), default=0)
-    max_len = max((len(c) for c in clusters), default=0)
+        min_len = min((len(c) for c in clusters), default=0)
+        max_len = max((len(c) for c in clusters), default=0)
 
-    cluster_size_range = 1, float("inf")
-    must_pegs: set[int] = set()
-    any_pegs: Optional[set[int]] = None
-    keywords: set[str] = set()
+        cluster_size_range = 1, float("inf")
+        must_pegs: set[int] = set()
+        any_pegs: Optional[set[int]] = None
+        keywords: set[str] = set()
 
-    if clusters:
-        cluster_size_range = st.slider(
-            "Gene count",
-            min_value=min_len,
-            max_value=max_len,
-            value=(min_len, max_len),
-            step=1,
-        )
-
-        contain_all = st.checkbox("Has all of the genes")
-        if contain_all:
-            must_pegs_help = (
-                "Rv0001, Rv0002, Rv0003, Rv0004, Rv0005, Rv0006, Rv0007, Rv0008c,"
+        if clusters:
+            cluster_size_range = st.slider(
+                "Gene count",
+                min_value=min_len,
+                max_value=max_len,
+                value=(min_len, max_len),
+                step=1,
             )
-            must_pegs_text = st.text_area(
-                "Comma separated RefSeqs",
-                must_pegs_help,
-                help=must_pegs_help,
-                key="all",
-            )
-            must_pegs = {p.lower() for p in must_pegs_text.split(",")}
 
-        contain_any = st.checkbox("Has atleast one of the genes")
-        if contain_any:
-            any_pegs_text = st.text_area(
-                "Comma separated RefSeqs",
-                help="Rv0009, Rv0010c, Rv0011c, Rv0012, Rv0013, Rv0014c, Rv0015c, Rv0016, Rv0017, Rv0018c",
-                key="any",
-            )
-            any_pegs = {p.lower() for p in any_pegs_text.split(",")}
-
-        contain_keyword = st.checkbox("Has gene description keywords", value=False)
-        if contain_keyword:
-            desc_keyword_txt = st.text_input("", "mce")
-            keywords = query_keywords(desc_keyword_txt)
-
-        body: list[str] = []
-        operons = []
-        for i, cluster in enumerate(clusters):
-            if not (
-                cluster_size_range[0] <= len(cluster) <= cluster_size_range[1]
-                and must_pegs.issubset({full_data[j].refseq.lower() for j in cluster})
-                and (
-                    not any_pegs
-                    or any([full_data[j].refseq.lower() in any_pegs for j in cluster])
+            refseq_help = "Comma separated RefSeq IDs"
+            refseq_input_label = "Comma separated RefSeq IDs"
+            sample_refseqs = df["RefSeq"][:8]
+            refseq_prefill = ', '.join(sample_refseqs)
+            
+            contain_all = st.checkbox("All of the genes",help=refseq_help)
+            if contain_all:
+                must_pegs_text = st.text_area(
+                    refseq_input_label,
+                    refseq_prefill,
+                    key="all",
                 )
-                and (
-                    not keywords
-                    or any(
-                        [
-                            all(s in full_data[j].desc.lower() for s in keywords)
-                            for j in cluster
-                        ]
+                must_pegs = {p.lower() for p in must_pegs_text.split(",")}
+
+            contain_any = st.checkbox("Atleast one of the genes",help=refseq_help)
+            if contain_any:
+                any_pegs_text = st.text_area(
+                    refseq_input_label,
+                    refseq_prefill,
+                    key="any",
+                )
+                any_pegs = {p.lower() for p in any_pegs_text.split(",")}
+
+            contain_keyword = st.checkbox("Gene description keywords", value=False, help="Filter operons by contained gene's function descriptions")
+            if contain_keyword:
+                desc_keyword_txt = st.text_input("", "mce")
+                keywords = query_keywords(desc_keyword_txt)
+
+            body: list[str] = []
+            for i, cluster in enumerate(clusters):
+                if not (
+                    cluster_size_range[0] <= len(cluster) <= cluster_size_range[1]
+                    and must_pegs.issubset({full_data[j].refseq.lower() for j in cluster})
+                    and (
+                        not any_pegs
+                        or any([full_data[j].refseq.lower() in any_pegs for j in cluster])
                     )
-                )
-            ):
-                continue
+                    and (
+                        not keywords
+                        or any(
+                            [
+                                all(s in full_data[j].desc.lower() for s in keywords)
+                                for j in cluster
+                            ]
+                        )
+                    )
+                ):
+                    continue
 
-            operons.append((i, df.loc[sorted(cluster)]))
-    else:
-        operons = []
+                operons.append((i, df.loc[sorted(cluster)]))
 
     if operons:
+        detailed = st.checkbox(f"Detailed view", value=True) 
         st.info(f"{len(operons)} operons found")
         
         save = st.checkbox(f"Save results") 
@@ -369,6 +373,11 @@ if submit:
             dfx["Protein ID"] = dfx["Protein ID"].apply(
                 lambda r: f'<a target="_blank" href="https://www.ncbi.nlm.nih.gov/protein/?term={r}">{r}</a>'
             )
+            if not detailed:
+                del dfx["Confidence"]
+            else:
+                # Confidence score is a gene connected to next gene. Last gene will technically have low score so set it to previous score to keep it meaningful
+                dfx["Confidence"][dfx.index.max()] = dfx["Confidence"][dfx.index.max()-1]
             st.write(
                 dfx.to_html(
                     justify="center",
@@ -383,8 +392,8 @@ if submit:
                 show_all = st.checkbox(
                     f"Show remaining {len(operons) - i - 1} operons", value=False
                 )
-            if not show_all:
-                break
+                if not show_all:
+                    break
     else:
         st.error(f"No matching clusters found")
 

@@ -10,7 +10,7 @@
             "type": "python",
             "subProcess": true,
             "request": "launch",
-            "program": "/tmp/OperonHunter/.venv/bin/streamlit",
+            "program": "~/venv/bin/streamlit",
             "args": [
                 "run",
                 "web.py"

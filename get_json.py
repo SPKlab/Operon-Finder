@@ -14,7 +14,7 @@ from helpers import data
 import streamlit as st
 from JsonToCoordinates import parse_string_scores
 
-def get_operons(genome_id:str, pegs: frozenset) -> list[tuple[int, float]]:
+def get_operons(genome_id:str, pegs: frozenset) -> dict[str, float]:
     placeholder = st.empty()
     placeholder.info("Please wait while we fetch the data and predict operons. It might take upto 15 minutes.")
 
@@ -74,7 +74,7 @@ def get_operons(genome_id:str, pegs: frozenset) -> list[tuple[int, float]]:
     return main(genome_id, progress_bar)
 
 @cache
-def operon_probs(genome_id: str, pegs: frozenset) -> list[tuple[int, float]]:
+def operon_probs(genome_id: str, pegs: frozenset) -> dict[str, float]:
     makedirs(f'.json_files/{genome_id}', exist_ok=True)
     predict_json = Path(f'.json_files/{genome_id}/operons.json')
     if predict_json.exists():
@@ -85,24 +85,26 @@ def operon_probs(genome_id: str, pegs: frozenset) -> list[tuple[int, float]]:
         with open(predict_json, 'w') as f:
             dump(operons, f)
         data.updated()
-    return operons
+    # JSON keys can only be strings
+    return {int(gene_id): prob for gene_id, prob in operons.items()}
 
-def operon_clusters(genome_id: str, pegs: frozenset, min_prob: float) -> list[set[int]]:
+def operon_clusters(genome_id: str, pegs: frozenset[int], min_prob: float) -> tuple[list[set[int]], dict[int, float]]:
     peg_next  = {}
     prev = -1
     for peg in sorted(pegs):
         peg_next[prev] = peg
         prev = peg
+    probs = operon_probs(genome_id, pegs)
     peg_nums = sorted(
-        [[peg_num, peg_next[peg_num]] for peg_num, prob in operon_probs(genome_id, pegs) if prob >= min_prob]
+        [[peg_num, peg_next[peg_num]] for peg_num, prob in probs.items() if prob >= min_prob]
     )
     # pair = [op, op[:op.rfind('.')+1] + str(peg_num + 1)]
 
     clusters: list[set[int]] = []
-    for peg_num in peg_nums:
-        if clusters and peg_num[0] in clusters[-1]:
-            clusters[-1].add(peg_num[1])
+    for peg_num, next_peg_num in peg_nums:
+        if clusters and peg_num in clusters[-1]:
+            clusters[-1].add(next_peg_num)
         else:
-            clusters.append(set(peg_num))
+            clusters.append({peg_num, next_peg_num})
 
-    return clusters
+    return clusters, probs

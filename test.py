@@ -24,12 +24,12 @@ def predictor(idx: int, data: ImageDataBunch) -> tuple[float]:
     return confidence
 
 
-def main(genome_id: str, progress_bar) -> list[tuple[int, float]]:
+def main(genome_id: str, progress_bar) -> dict[str, float]:
     # No need to update learn's data since input image passed manually
     data = ImageDataBunch.from_folder(path, test=f'test_operons/{genome_id}')
     total = sum(1 for _ in Path(path).joinpath(f'test_operons/{genome_id}').iterdir())
     
-    predict_list = []
+    predict_list = {}
 
     print("Enter predict")
     c = 0
@@ -40,7 +40,7 @@ def main(genome_id: str, progress_bar) -> list[tuple[int, float]]:
         progress_bar.progress(min(0.65 + c/total*0.35, 0.99))
         confidence = predictor(i, data)
         fname = fsplit[0]
-        predict_list.append((int(fname.split(".")[-1]), confidence))
+        predict_list[fname.split(".")[-1]] = round(confidence, 2)
     print("End predict")
         
     progress_bar.empty()
