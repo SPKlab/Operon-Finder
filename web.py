@@ -62,7 +62,11 @@ def setup():
                 if data.changed:
                     try:
                         subprocess.check_call(["git", "add", "-A"], cwd=".json_files")
-                        subprocess.check_call(["git", "commit", "-am", "Update"], cwd=".json_files")
+                        try:
+                            subprocess.check_call(["git", "commit", "-am", "Update"], cwd=".json_files")
+                        except subprocess.CalledProcessError as e:
+                            if e.returncode != 1:
+                                raise
                         subprocess.check_call(["git", "push"], cwd=".json_files")
                     except subprocess.CalledProcessError as e:
                         print(f"{e.stdout}{e.stderr}", file=sys.stderr)
@@ -272,8 +276,12 @@ if submit:
             step=0.01,
         )
 
-        with PidFile('.lock_'+genome_id):
-            clusters, probs = operon_clusters(genome_id, frozenset(full_data.keys()), min_prob)
+        for i, genome_id in enumerate(sample_organisms.values()):
+            if genome_id:
+                st.write(str((i, genome_id)))
+                full_data, gene_count = to_pid(genome_id)
+                with PidFile('.lock_'+genome_id):
+                    clusters, probs = operon_clusters(genome_id, frozenset(full_data.keys()), min_prob)
         df["Confidence"] = pd.Series(probs)
 
         # clusters = [{998, 999, 1002}, {1001, 1002, 1003}, {1006, 1007}, {999, 1002, 1010, 1011, 1012}]
@@ -377,7 +385,7 @@ if submit:
                 del dfx["Confidence"]
             else:
                 # Confidence score is a gene connected to next gene. Last gene will technically have low score so set it to previous score to keep it meaningful
-                dfx["Confidence"][dfx.index.max()] = dfx["Confidence"][dfx.index.max()-1]
+                dfx.loc[dfx.index.max(), "Confidence"] = dfx["Confidence"][dfx.index.max()-1]
             st.write(
                 dfx.to_html(
                     justify="center",
