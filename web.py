@@ -26,6 +26,7 @@ import streamlit.components.v1 as components
 
 
 if "shell" in st.experimental_get_query_params():
+
     def run_command(args):
         """Run command, transfer stdout/stderr back into Streamlit and manage error"""
         st.info(f"Running {args}")
@@ -121,32 +122,47 @@ genome_id = None
 if genome_id_option == search:
     try:
         sample_organisms = {}
-        for p in Path('.json_files').glob('*/genome.json'):
+        for p in Path(".json_files").glob("*/genome.json"):
             try:
-                sample_organisms[loads(p.read_bytes())["docs"][0]["genome_name"]] = p.parent.name
+                sample_organisms[
+                    loads(p.read_bytes())["docs"][0]["genome_name"]
+                ] = p.parent.name
             except Exception as e:
                 st.error(e)
-        sample_organisms['Custom'] = None
+        sample_organisms["Custom"] = None
 
         if not streamlit_cloud:
-            del sample_organisms['Custom']
-        organism_selection = st.sidebar.selectbox("Choose organism", sample_organisms, index=7)
-        if organism_selection == 'Custom':
-            st.sidebar.error("It may take long to fetch external data for custom organism during first query.")
+            del sample_organisms["Custom"]
+        organism_selection = st.sidebar.selectbox(
+            "Choose organism", sample_organisms, index=7
+        )
+        if organism_selection == "Custom":
+            st.sidebar.error(
+                "It may take long to fetch external data for custom organism during first query."
+            )
         genome_id = sample_organisms[organism_selection]
 
-        if genome_id is None and (organism_query := st.sidebar.text_input( "Enter name", help="E.g. Mycobacterium tuberculosis H37Rv, Escherichia coli ATCC8739").strip()): 
+        if genome_id is None and (
+            organism_query := st.sidebar.text_input(
+                "Enter name",
+                help="E.g. Mycobacterium tuberculosis H37Rv, Escherichia coli ATCC8739",
+            ).strip()
+        ):
             organism_pattern = re.compile("(?<=<span class='informal'>).*?(?=<\/span>)")
-            organisms = set(organism_pattern.findall(
+            organisms = set(
+                organism_pattern.findall(
                 curl_output(
                     f"https://string-db.org/cgi/queryspeciesnames?species_text={quote_plus(organism_query)}&running_number=10&auto_detect=0&home_species=0&home_species_type=core&show_clades=0&show_mapped=1"
                 ).decode()
-            ))
+                )
+            )
             if not organisms:
                 st.error(f"No organism of such name found.")
-                st.markdown(f"Try [alternate names](https://www.google.com/search?q=site%3Astring-db.org%2Fnetwork+{quote_plus(organism_query)})." )
+                st.markdown(
+                    f"Try [alternate names](https://www.google.com/search?q=site%3Astring-db.org%2Fnetwork+{quote_plus(organism_query)})."
+                )
             else:
-                if len(organisms) == 1 and organism_selection != 'Custom':
+                if len(organisms) == 1 and organism_selection != "Custom":
                     organism_name = next(iter(organisms))
                 else:
                     st.write("---")
@@ -159,7 +175,10 @@ if genome_id_option == search:
                     ).decode()
                 oid_pattern = re.search(r"(?<=Info&id=).*?(?='>)", string_page)
                 # Take second refseq if available since b001, b4706 missing in 511145 in PATRIC
-                ref_match = re.search(r"(?:(?<=Example identifier: ).*?(?=<\/div>))|(?:(?<=identifiers:<\/div><div class='single_data'>)(?:(?:(?:[^, ]*, )([^, ]*))|([^<]*))(?:.*?)(?=<\/div>|(?:, )))", string_page)
+                ref_match = re.search(
+                    r"(?:(?<=Example identifier: ).*?(?=<\/div>))|(?:(?<=identifiers:<\/div><div class='single_data'>)(?:(?:(?:[^, ]*, )([^, ]*))|([^<]*))(?:.*?)(?=<\/div>|(?:, )))",
+                    string_page,
+                )
                 assert oid_pattern and ref_match
                 organism_id = oid_pattern.group()
                 string_refseq = next(x for x in ref_match.groups() if x is not None)
@@ -178,13 +197,20 @@ if genome_id_option == search:
                     )
                 )["genome_feature"]["result"]
 
-                if "response" not  in genome_results or not genome_results["response"]["docs"]:
+                if (
+                    "response" not in genome_results
+                    or not genome_results["response"]["docs"]
+                ):
                     raise InvalidInput
                 genome_id = genome_results["response"]["docs"][0]["genome_id"]
     except InvalidInput:
         st.error("This genome is unavailable.")
 else:
-    genome_id = st.sidebar.text_input("Genome ID", "262316.17", help="Must be available in PATRIC and STRING databases.").strip() #83332.12")  # 111')
+    genome_id = st.sidebar.text_input(
+        "Genome ID",
+        "262316.17",
+        help="Must be available in PATRIC and STRING databases.",
+    ).strip()  # 83332.12")  # 111')
     if re.match(r"\d+\.\d+", genome_id):
         try:
             for url in (
@@ -193,7 +219,9 @@ else:
             ):
                 if not requests.head(url).ok:
                     genome_id = None
-                    st.sidebar.error("This genome is not supported. Try searching instead.")
+                    st.sidebar.error(
+                        "This genome is not supported. Try searching instead."
+                    )
         except ConnectionError:
             print("Connection error")
     else:
@@ -203,7 +231,9 @@ else:
     
 if genome_id:
     # link_button(f"Genome details: {genome_id}", f"https://www.patricbrc.org/view/Genome/{genome_id}#view_tab=features")
-    st.sidebar.markdown(f"**Genome details:** [`{genome_id}`](https://www.patricbrc.org/view/Genome/{genome_id}#view_tab=features)")
+    st.sidebar.markdown(
+        f"**Genome details:** [`{genome_id}`](https://www.patricbrc.org/view/Genome/{genome_id}#view_tab=features)"
+    )
 
 
 st.sidebar.write("---")
@@ -230,7 +260,16 @@ if genome_id:
 
 if submit:
     # st.spinner("Processing..")
-    clusters = operon_clusters(genome_id, frozenset(full_data.keys()))
+    with st.expander("Filter operons", True):
+        min_prob = st.slider(
+            "Confidence threshold",
+            min_value=0,
+            max_value=1,
+            value=0.5,
+            step=0.1,
+        )
+
+        clusters = operon_clusters(genome_id, frozenset(full_data.keys()), min_prob)
 
     # clusters = [{998, 999, 1002}, {1001, 1002, 1003}, {1006, 1007}, {999, 1002, 1010, 1011, 1012}]
 
@@ -243,38 +282,40 @@ if submit:
     keywords: set[str] = set()
 
     if clusters:
-        with st.expander("Filter operons", True):
-            cluster_size_range = st.slider(
-                "Gene count",
-                min_value=min_len,
-                max_value=max_len,
-                value=(min_len, max_len),
-                step=1,
+        cluster_size_range = st.slider(
+            "Gene count",
+            min_value=min_len,
+            max_value=max_len,
+            value=(min_len, max_len),
+            step=1,
+        )
+
+        contain_all = st.checkbox("Has all of the genes")
+        if contain_all:
+            must_pegs_help = (
+                "Rv0001, Rv0002, Rv0003, Rv0004, Rv0005, Rv0006, Rv0007, Rv0008c,"
             )
+            must_pegs_text = st.text_area(
+                "Comma separated RefSeqs",
+                must_pegs_help,
+                help=must_pegs_help,
+                key="all",
+            )
+            must_pegs = {p.lower() for p in must_pegs_text.split(",")}
 
-            contain_all = st.checkbox("Has all of the genes")
-            if contain_all:
-                must_pegs_text = st.text_area(
-                    "Comma separated RefSeqs",
-                    "Rv0001, Rv0002, Rv0003, Rv0004, Rv0005, Rv0006, Rv0007, Rv0008c,",
-                    help=", ".join(map(str, range(3, 24))),
-                    key="all",
-                )
-                must_pegs = {p.lower() for p in must_pegs_text.split(",")}
+        contain_any = st.checkbox("Has atleast one of the genes")
+        if contain_any:
+            any_pegs_text = st.text_area(
+                "Comma separated RefSeqs",
+                help="Rv0009, Rv0010c, Rv0011c, Rv0012, Rv0013, Rv0014c, Rv0015c, Rv0016, Rv0017, Rv0018c",
+                key="any",
+            )
+            any_pegs = {p.lower() for p in any_pegs_text.split(",")}
 
-            contain_any = st.checkbox("Has atleast one of the genes")
-            if contain_any:
-                any_pegs_text = st.text_area(
-                    "Comma separated RefSeqs",
-                    help="Rv0009, Rv0010c, Rv0011c, Rv0012, Rv0013, Rv0014c, Rv0015c, Rv0016, Rv0017, Rv0018c",
-                    key="any",
-                )
-                any_pegs = {p.lower() for p in any_pegs_text.split(",")}
-
-            contain_keyword = st.checkbox("Has gene description keywords", value=False)
-            if contain_keyword:
-                desc_keyword_txt = st.text_input("", "mce")
-                keywords = query_keywords(desc_keyword_txt)
+        contain_keyword = st.checkbox("Has gene description keywords", value=False)
+        if contain_keyword:
+            desc_keyword_txt = st.text_input("", "mce")
+            keywords = query_keywords(desc_keyword_txt)
 
         body: list[str] = []
         operons = []
@@ -309,28 +350,50 @@ if submit:
         if save:
             st.download_button(
                 "Download",
-                data= '\n'.join(['\t'.join(["PATRIC ID", *df.columns.tolist()])] + [f"Operon {i}\n" + dfx.to_csv(header=False, sep='\t') for i, dfx in operons]),
+                    data="\n".join(
+                        ["\t".join(["PATRIC ID", *df.columns.tolist()])]
+                        + [
+                            f"Operon {i}\n" + dfx.to_csv(header=False, sep="\t")
+                            for i, dfx in operons
+                        ]
+                    ),
                 file_name="predicted_operons.json",
             )
 
         show_all = False
         for i, (operon_num, dfx) in enumerate(operons):
             st.markdown(f"#### Operon {operon_num+1}")
-            dfx['RefSeq'] = dfx['RefSeq'].apply(lambda r: f'<a target="_blank" href="https://www.ncbi.nlm.nih.gov/refseq/?term={r}">{r}</a>')
-            dfx['Protein ID'] = dfx['Protein ID'].apply(lambda r: f'<a target="_blank" href="https://www.ncbi.nlm.nih.gov/protein/?term={r}">{r}</a>')
-            st.write(dfx.to_html(justify='center', escape=False, classes=["table-borderless"], border=0), unsafe_allow_html=True)
+            dfx["RefSeq"] = dfx["RefSeq"].apply(
+                lambda r: f'<a target="_blank" href="https://www.ncbi.nlm.nih.gov/refseq/?term={r}">{r}</a>'
+            )
+            dfx["Protein ID"] = dfx["Protein ID"].apply(
+                lambda r: f'<a target="_blank" href="https://www.ncbi.nlm.nih.gov/protein/?term={r}">{r}</a>'
+            )
+            st.write(
+                dfx.to_html(
+                    justify="center",
+                    escape=False,
+                    classes=["table-borderless"],
+                    border=0,
+                ),
+                unsafe_allow_html=True,
+            )
             # st.table(dfx)
             if i >= 50 and not show_all:
-                show_all = st.checkbox(f"Show remaining {len(operons) - i - 1} operons", value=False)
-                if not show_all:
-                    break
+                show_all = st.checkbox(
+                    f"Show remaining {len(operons) - i - 1} operons", value=False
+                )
+            if not show_all:
+                break
     else:
         st.error(f"No matching clusters found")
 
-components.html("""<script>
+components.html(
+    """<script>
 /* Components live in their Iframe. Streamlit's context is the first parent.
 Find higher parents for each enclosing IFrames.
 Streamlit share adds another iframe on top. */
 const p = window.parent.parent;
 [p, p.parent].forEach(p=>p.postMessage("appLoaded", "*"));</script>
-""")
+"""
+)

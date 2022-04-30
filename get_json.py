@@ -14,7 +14,7 @@ from helpers import data
 import streamlit as st
 from JsonToCoordinates import parse_string_scores
 
-def get_operons(genome_id:str, pegs: frozenset) -> list[int]:
+def get_operons(genome_id:str, pegs: frozenset) -> list[tuple[int, float]]:
     placeholder = st.empty()
     placeholder.info("Please wait while we fetch the data and predict operons. It might take upto 15 minutes.")
 
@@ -74,24 +74,27 @@ def get_operons(genome_id:str, pegs: frozenset) -> list[int]:
     return main(genome_id, progress_bar)
 
 @cache
-def operon_clusters(genome_id: str, pegs: frozenset) -> list[set[int]]:
+def operon_probs(genome_id: str, pegs: frozenset) -> list[tuple[int, float]]:
     makedirs(f'.json_files/{genome_id}', exist_ok=True)
     predict_json = Path(f'.json_files/{genome_id}/operons.json')
     if predict_json.exists():
         operons = loads(predict_json.read_bytes())
+        1+1
     else:
         operons = get_operons(genome_id, pegs)
         with open(predict_json, 'w') as f:
             dump(operons, f)
         data.updated()
+    return operons
 
+def operon_clusters(genome_id: str, pegs: frozenset, min_prob: float) -> list[set[int]]:
     peg_next  = {}
     prev = -1
     for peg in sorted(pegs):
         peg_next[prev] = peg
         prev = peg
     peg_nums = sorted(
-        [[peg_num, peg_next[peg_num]] for peg_num in operons]
+        [[peg_num, peg_next[peg_num]] for peg_num, prob in operon_probs(genome_id, pegs) if prob >= min_prob]
     )
     # pair = [op, op[:op.rfind('.')+1] + str(peg_num + 1)]
 
