@@ -7,4 +7,5 @@ htop
 wget
 neovim
 fish
+systemd
 openssh-server
