@@ -276,12 +276,8 @@ if submit:
             step=0.01,
         )
 
-        for i, genome_id in enumerate(sample_organisms.values()):
-            if genome_id:
-                st.write(str((i, genome_id)))
-                full_data, gene_count = to_pid(genome_id)
-                with PidFile('.lock_'+genome_id):
-                    clusters, probs = operon_clusters(genome_id, frozenset(full_data.keys()), min_prob)
+        with PidFile('.lock_'+genome_id):
+            clusters, probs = operon_clusters(genome_id, frozenset(full_data.keys()), min_prob)
         df["Confidence"] = pd.Series(probs)
 
         # clusters = [{998, 999, 1002}, {1001, 1002, 1003}, {1006, 1007}, {999, 1002, 1010, 1011, 1012}]
