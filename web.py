@@ -180,35 +180,40 @@ if genome_id_option == search:
                         f"https://string-db.org/cgi/organisms?species_text_organisms={quote_plus(organism_name)}"
                     ).decode()
                 oid_pattern = re.search(r"(?<=Info&id=).*?(?='>)", string_page)
-                # Take second refseq if available since b001, b4706 missing in 511145 in PATRIC
-                ref_match = re.search(
-                    r"(?:(?<=Example identifier: ).*?(?=<\/div>))|(?:(?<=identifiers:<\/div><div class='single_data'>)(?:(?:(?:[^, ]*, )([^, ]*))|([^<]*))(?:.*?)(?=<\/div>|(?:, )))",
+                # Two types of pages
+                # https://string-db.org/cgi/organisms?species_text_organisms=Pseudomonas%20aeruginosa%20PAO1
+                # https://string-db.org/cgi/organisms?species_text_organisms=Pseudomonas%20aeruginosa
+                ref_matches = re.findall(
+                    r"(?:(?<=Example identifier: ).*?(?=<\/div>))|(?:(?<=identifiers:<\/div><div class='single_data'>)|(?<=\w, ))\w*(?=<\/div>|(?:[\w, ]*<\/div>))",
                     string_page,
                 )
-                assert oid_pattern and ref_match
+                assert oid_pattern and ref_matches
                 organism_id = oid_pattern.group()
-                string_refseq = next(x for x in ref_match.groups() if x is not None)
 
-                genome_results = loads(
-                    curl_output(
-                        "https://patricbrc.org/api/query/",
-                        "-H",
-                        "Content-Type: application/json",
-                        "--data-raw",
-                        '{"genome_feature":{"dataType":"genome_feature","accept":"application/solr+json","query":"and(keyword(%22'
-                        + string_refseq
-                        + "%22),keyword(%22"
-                        + organism_id
-                        + '%22))&ne(annotation,brc1)&ne(feature_type,source)&limit(3)&sort(+annotation,-score)"}}',
-                    )
-                )["genome_feature"]["result"]
+                genome_ids = set()
+                for string_refseq in ref_matches:
+                    genome_results = loads(
+                        curl_output(
+                            "https://patricbrc.org/api/query/",
+                            "-H",
+                            "Content-Type: application/json",
+                            "--data-raw",
+                            '{"genome_feature":{"dataType":"genome_feature","accept":"application/solr+json","query":"and(keyword(%22'
+                            + string_refseq
+                            + "%22),keyword(%22"
+                            + organism_id
+                            + '%22))&ne(annotation,brc1)&ne(feature_type,source)&limit(3)&sort(+annotation,-score)"}}',
+                        )
+                    )["genome_feature"]["result"]
 
-                if (
-                    "response" not in genome_results
-                    or not genome_results["response"]["docs"]
-                ):
+                    if genome_results.get("response", {}).get("docs"):
+                        genome_ids.add(genome_results["response"]["docs"][0]["genome_id"])
+                if not genome_ids:
                     raise InvalidInput
-                genome_id = genome_results["response"]["docs"][0]["genome_id"]
+                if len(genome_ids) == 1:
+                    genome_id = genome_ids.pop()
+                else:
+                    genome_id = st.selectbox("Choose genome", genome_ids)
     except InvalidInput:
         st.error("This genome is unavailable.")
 else:
