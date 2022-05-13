@@ -18,12 +18,15 @@ def curl_output(*args: str)->bytes:
     return check_output(('curl', '--compressed') + args)
 
 PatricMeta = namedtuple('PatricMeta', ['refseq', 'desc', 'protein_id'])
+LocInfo = namedtuple('LocInfo', ['start', 'end'])
 
-def to_pid( genome_id: str) -> tuple[dict[int, PatricMeta], int]:
+def to_pid( genome_id: str) -> tuple[dict[int, PatricMeta], int, str, dict[str, LocInfo]]:
     genome_data = get_genome_data(genome_id)
     feature_data = genome_data["docs"]
 
+    gene_locations = {}
     full_data = {}
+    assert feature_data
     for feature in feature_data:
         desc: str = feature["product"]
         desc_col_loc = desc.find(': ')
@@ -36,9 +39,12 @@ def to_pid( genome_id: str) -> tuple[dict[int, PatricMeta], int]:
         full_data[patric_id] = PatricMeta(
             desc=desc, refseq=refseq, protein_id=protein_id
         )
+        
+        gene_locations[patric_id] = LocInfo(start=feature['start'], end=feature['end'])
 
+    sequence_accession_id = feature["sequence_id"]
     gene_count: int = genome_data["numFound"]
-    return full_data, gene_count
+    return full_data, gene_count, sequence_accession_id, gene_locations
 
 def query_keywords(query: str) -> set[str]:
     return {qs.lower() for qs in query.split(' ') if qs}

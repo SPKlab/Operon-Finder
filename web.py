@@ -256,7 +256,7 @@ submit = s_chk if genome_id else False
 if genome_id:
     st.write("---")
 
-    full_data, gene_count = to_pid(genome_id)
+    full_data, gene_count, sequence_accession_id, gene_locations = to_pid(genome_id)
     df = pd.DataFrame.from_dict(
         full_data, orient="index", columns=["RefSeq", "Description", "Protein ID"]
     )
@@ -403,6 +403,20 @@ if submit:
                 )
                 if not show_all:
                     break
+
+            if detailed:
+                if st.checkbox(label="FASTA", key=operon_num):
+                    fasta = curl_output(
+                        'https://patricbrc.org/api/genome_feature/?http_accept=application/dna+fasta',
+                        '--data-raw',
+                        'rql='+ quote_plus(
+                            'in(feature_id%2C(' + 
+                            '%2C'.join(f"PATRIC.{genome_id}.{sequence_accession_id}.CDS.{gene_locations[pid].start}.{gene_locations[pid].end}.fwd" for pid in dfx.index) +
+                            '))%26sort(%2Bfeature_id)%26limit(25000)'
+                            )
+                        ).decode()
+                    st.download_button(label='Download', file_name=f'{genome_id}-operon-{operon_num}.fasta', key=operon_num, data=fasta)
+                    components.html(f"<textarea readonly rows=50 style='width:100%;'>{fasta}</textarea>", height=600)
     else:
         st.error(f"No matching clusters found")
 
