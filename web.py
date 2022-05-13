@@ -284,6 +284,7 @@ if submit:
         with PidFile('.lock_'+genome_id):
             clusters, probs = operon_clusters(genome_id, frozenset(full_data.keys()), min_prob)
         df["Confidence"] = pd.Series(probs)
+        df["Intergenic distance"] = pd.Series([None]*len(df.index))
 
         # clusters = [{998, 999, 1002}, {1001, 1002, 1003}, {1006, 1007}, {999, 1002, 1010, 1011, 1012}]
 
@@ -353,7 +354,15 @@ if submit:
                 ):
                     continue
 
-                operons.append((i, df.loc[sorted(cluster)]))
+                dfx = df.loc[sorted(cluster)]
+
+                # Confidence score is a gene connected to next gene. Last gene will technically have low score so set it to previous score to keep it meaningful
+                dfx.loc[dfx.index.max(), "Confidence"] = dfx["Confidence"][dfx.index.max()-1]
+
+                for pid in dfx.index:
+                    dfx.loc[pid, "Intergenic distance"] = gene_locations[pid+1].start - gene_locations[pid].end if pid+1 in dfx.index else '-'
+
+                operons.append((i, dfx))
 
     if operons:
         detailed = st.checkbox(f"Detailed view", value=True) 
@@ -366,11 +375,11 @@ if submit:
                     data="\n".join(
                         ["\t".join(["PATRIC ID", *df.columns.tolist()])]
                         + [
-                            f"Operon {i}\n" + dfx.to_csv(header=False, sep="\t")
+                            f"Operon {i+1}\n" + dfx.to_csv(header=False, sep="\t")
                             for i, dfx in operons
                         ]
                     ),
-                file_name="predicted_operons.json",
+                file_name=f"{genome_id}-operon.tsv",
             )
 
         show_all = False
@@ -384,9 +393,7 @@ if submit:
             )
             if not detailed:
                 del dfx["Confidence"]
-            else:
-                # Confidence score is a gene connected to next gene. Last gene will technically have low score so set it to previous score to keep it meaningful
-                dfx.loc[dfx.index.max(), "Confidence"] = dfx["Confidence"][dfx.index.max()-1]
+                del dfx["Intergenic distance"]
             st.write(
                 dfx.to_html(
                     justify="center",
