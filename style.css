@@ -1,35 +1,76 @@
- #MainMenu {visibility: hidden;} footer {visibility: hidden;} 
+ #MainMenu {
+   visibility: hidden;
+ }
 
-.streamlit-expanderHeader {
-    font-size: 1rem !important;
-}
+ footer {
+   visibility: hidden;
+ }
 
-[data-testid="stSidebar"] div:last-child > .stCheckbox > [data-baseweb="checkbox"] {
-    /* display: inline-flex; */
-    -webkit-box-align: center;
-    align-items: center;
-    -webkit-box-pack: center;
-    justify-content: center;
-    font-weight: 400;
-    padding: 0.25rem 0.75rem 0.25rem 0.35em;
-    border-radius: 0.25rem;
-    margin: 0px;
-    line-height: 2;
-    color: inherit;
-    width: auto;
-    background-color: rgb(249, 249, 251);
-    border: 1px solid rgba(38, 39, 48, 0.2);
-}
+ .streamlit-expanderHeader {
+   font-size: 1rem !important;
+ }
 
-.table-borderless tbody + tbody,
-.table-borderless td,
-.table-borderless th,
-.table-borderless thead th {
-  border: 0;
-  font-size: 0.8rem;
-  text-align: center;
-}
+ [data-testid="stSidebar"] div:last-child>.stCheckbox>[data-baseweb="checkbox"] {
+   /* display: inline-flex; */
+   -webkit-box-align: center;
+   align-items: center;
+   -webkit-box-pack: center;
+   justify-content: center;
+   font-weight: 400;
+   padding: 0.25rem 0.75rem 0.25rem 0.35em;
+   border-radius: 0.25rem;
+   margin: 0px;
+   line-height: 2;
+   color: inherit;
+   width: auto;
+   background-color: rgb(249, 249, 251);
+   border: 1px solid rgba(38, 39, 48, 0.2);
+ }
 
-.table-borderless {
-  width: 100%;
-}
+ .table-borderless tbody+tbody,
+ .table-borderless td,
+ .table-borderless th,
+ .table-borderless thead th {
+   border: 0;
+   font-size: 0.8rem;
+   text-align: center;
+ }
+
+ .table-borderless td:nth-child(1),
+ .table-borderless th:nth-child(1) {
+   width: 5%;
+   max-width: 5%;
+ }
+
+ .table-borderless td:nth-child(2),
+ .table-borderless th:nth-child(2) {
+   width: 10%;
+   max-width: 10%;
+ }
+
+ .table-borderless td:nth-last-child(3),
+ .table-borderless th:nth-last-child(3) {
+   width: 15%;
+   max-width: 15%;
+ }
+
+ .table-borderless td:nth-last-child(2),
+ .table-borderless th:nth-last-child(2) {
+   width: 10%;
+   max-width: 10%;
+ }
+
+ .table-borderless td:nth-last-child(1),
+ .table-borderless th:nth-last-child(1) {
+   width: 15%;
+   max-width: 15%;
+ }
+
+ .table-borderless {
+   width: 100%;
+   table-layout: fixed;
+ }
+
+ .streamlit-expanderContent:nth-child(2) [data-testid='stVerticalBlock']>.element-container:nth-child(2) [data-baseweb="slider"]>div:nth-child(1) {
+   background-image: linear-gradient(to right, red, yellow, green);
+ }

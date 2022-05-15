@@ -20,6 +20,7 @@ def curl_output(*args: str)->bytes:
 PatricMeta = namedtuple('PatricMeta', ['refseq', 'desc', 'protein_id'])
 LocInfo = namedtuple('LocInfo', ['start', 'end'])
 
+@cache
 def to_pid( genome_id: str) -> tuple[dict[int, PatricMeta], int, str, dict[str, LocInfo]]:
     genome_data = get_genome_data(genome_id)
     feature_data = genome_data["docs"]

@@ -1,5 +1,16 @@
+# from pyinstrument import Profiler
+
+# profiler = Profiler()
+# profiler.start()
+
+# import cProfile, pstats, io
+# from pstats import SortKey
+# pr = cProfile.Profile()
+# pr.enable()
+
 from io import TextIOWrapper
-from pid import PidFile
+from pid import PidFile, PidFileAlreadyLockedError
+import numpy as np
 from json import dumps, loads
 from os import environ
 import requests
@@ -25,6 +36,8 @@ import shlex
 import subprocess
 import streamlit.components.v1 as components
 
+class ServerBusy(Exception):
+    pass
 
 if "shell" in st.experimental_get_query_params():
 
@@ -97,15 +110,11 @@ def setup():
 streamlit_cloud = environ.get("HOSTNAME", None) == "streamlit"
 
 
-class InvalidInput(Exception):
-    pass
-
-
 try:
     st.set_page_config(page_title="Operon Finder", page_icon=":dna:", layout="wide")
 except:
     pass
-st.markdown(
+st.write(
     f"<style>{Path('style.css').read_text()}</style>",
     unsafe_allow_html=True,
 )
@@ -126,19 +135,21 @@ if streamlit_cloud:
 
 genome_id = None
 if genome_id_option == search:
-    try:
         sample_organisms = {}
         for p in Path(".json_files").glob("*/genome.json"):
-            try:
-                sample_organisms[
-                    loads(p.read_bytes())["docs"][0]["genome_name"]
-                ] = p.parent.name
-            except Exception as e:
-                st.error(e)
+            genome_name_file = p.parent.joinpath('genome_name.txt')
+            if not genome_name_file.exists():
+                genome_name = loads(p.read_bytes())["docs"][0]["genome_name"]
+                genome_name_file.write_text(genome_name)
+            else:
+                genome_name = genome_name_file.read_text()
+
+            sample_organisms[ genome_name ] = p.parent.name
         sample_organisms["Custom"] = None
 
-        if not streamlit_cloud:
-            del sample_organisms["Custom"]
+        # Prevent model inference on local machine
+        # if not streamlit_cloud:
+        #     del sample_organisms["Custom"]
         organism_selection = st.sidebar.selectbox(
             "Choose organism", sample_organisms, index=7
         )
@@ -209,13 +220,11 @@ if genome_id_option == search:
                     if genome_results.get("response", {}).get("docs"):
                         genome_ids.add(genome_results["response"]["docs"][0]["genome_id"])
                 if not genome_ids:
-                    raise InvalidInput
-                if len(genome_ids) == 1:
+                    st.error("No compatible genomes found in PATRIC and STRING database.")
+                elif len(genome_ids) == 1:
                     genome_id = genome_ids.pop()
                 else:
                     genome_id = st.selectbox("Choose genome", genome_ids)
-    except InvalidInput:
-        st.error("This genome is unavailable.")
 else:
     genome_id = st.sidebar.text_input(
         "Genome ID",
@@ -253,8 +262,12 @@ st.sidebar.write("---")
 s_chk = st.sidebar.checkbox("Run")
 submit = s_chk if genome_id else False
 
+def br(times=1):
+    for _ in range(times):
+        st.write("<br/>", unsafe_allow_html=True)
+
 if genome_id:
-    st.write("---")
+    br()
 
     full_data, gene_count, sequence_accession_id, gene_locations = to_pid(genome_id)
     df = pd.DataFrame.from_dict(
@@ -273,6 +286,7 @@ if submit:
     # st.spinner("Processing..")
     operons = []
     with st.expander("Filter operons", True):
+        br()
         min_prob = st.slider(
             "Confidence threshold",
             min_value=.0,
@@ -281,8 +295,11 @@ if submit:
             step=0.01,
         )
 
-        with PidFile('.lock_'+genome_id):
-            clusters, probs = operon_clusters(genome_id, frozenset(full_data.keys()), min_prob)
+        try:
+            with PidFile('.lock_'+genome_id):
+                clusters, probs = operon_clusters(genome_id, frozenset(full_data.keys()), min_prob)
+        except PidFileAlreadyLockedError:
+            raise ServerBusy
         df["Confidence"] = pd.Series(probs)
         df["Intergenic distance"] = pd.Series([None]*len(df.index))
 
@@ -357,7 +374,8 @@ if submit:
                 dfx = df.loc[sorted(cluster)]
 
                 # Confidence score is a gene connected to next gene. Last gene will technically have low score so set it to previous score to keep it meaningful
-                dfx.loc[dfx.index.max(), "Confidence"] = dfx["Confidence"][dfx.index.max()-1]
+                idx_second_max, idx_max  = np.partition(dfx.index.values, -2)[-2:]
+                dfx.loc[idx_max, "Confidence"] = dfx["Confidence"][idx_second_max]
 
                 for pid in dfx.index:
                     dfx.loc[pid, "Intergenic distance"] = gene_locations[pid+1].start - gene_locations[pid].end if pid+1 in dfx.index else '-'
@@ -400,6 +418,7 @@ if submit:
                     escape=False,
                     classes=["table-borderless"],
                     border=0,
+                    formatters={'Confidence': lambda x: f'<b style="background-color: hsl({120*x}, 100%, 75%)">{x}</b>'} if detailed else None,
                 ),
                 unsafe_allow_html=True,
             )
@@ -412,18 +431,20 @@ if submit:
                     break
 
             if detailed:
-                if st.checkbox(label="FASTA", key=operon_num):
-                    fasta = curl_output(
+                if st.button(label="FASTA", key=operon_num):
+                    get_fasta = lambda direction: curl_output(
                         'https://patricbrc.org/api/genome_feature/?http_accept=application/dna+fasta',
                         '--data-raw',
                         'rql='+ quote_plus(
                             'in(feature_id%2C(' + 
-                            '%2C'.join(f"PATRIC.{genome_id}.{sequence_accession_id}.CDS.{gene_locations[pid].start}.{gene_locations[pid].end}.fwd" for pid in dfx.index) +
+                            '%2C'.join(f"PATRIC.{genome_id}.{sequence_accession_id}.CDS.{gene_locations[pid].start}.{gene_locations[pid].end}.{direction}" for pid in dfx.index) +
                             '))%26sort(%2Bfeature_id)%26limit(25000)'
                             )
                         ).decode()
+                    fasta = get_fasta('fwd') or get_fasta('rev')
                     st.download_button(label='Download', file_name=f'{genome_id}-operon-{operon_num}.fasta', key=operon_num, data=fasta)
-                    components.html(f"<textarea readonly rows=50 style='width:100%;'>{fasta}</textarea>", height=600)
+                    line_count = fasta.count('\n')+5
+                    components.html(f"<textarea readonly rows={line_count} style='width:100%'>{fasta}</textarea>", height=600, scrolling=True)
     else:
         st.error(f"No matching clusters found")
 
@@ -436,3 +457,13 @@ const p = window.parent.parent;
 [p, p.parent].forEach(p=>p.postMessage("appLoaded", "*"));</script>
 """
 )
+
+# pr.disable()
+# s = io.StringIO()
+# sortby = SortKey.CUMULATIVE
+# ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+# ps.print_stats()
+# print(s.getvalue())
+
+# profiler.stop()
+# profiler.print()
