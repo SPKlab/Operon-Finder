@@ -89,24 +89,20 @@ def setup():
                 sleep(time_left)
     Thread(target=data_commit, name="Git sync").start()
 
-    file = Path("data.7z")
-    if file.exists() and file.stat().st_size < 2e5:
-        file.unlink()
-    if not file.exists():
-        print("Loading data", file=sys.stderr)
-        try:
-            if not Path('.json_files').exists():
-                data_key = "OPERON_DATA_SOURCE"
-                if data_key not in environ:
-                    raise Exception(f"{data_key} environment variable missing. It should contain git repository URL.")
-                subprocess.check_call(["git", "clone", "--depth=1", environ["OPERON_DATA_SOURCE"], ".json_files"])
-                subprocess.check_call(["git", "config", "--global", "user.email", "operon@git.email"])
-                subprocess.check_call(["git", "config", "--global", "user.name", "git.name"])
-            for cmd in tmate_cmd.splitlines():
-                print(subprocess.check_output(shlex.split(cmd), text=True), file=sys.stderr)
-        except subprocess.CalledProcessError as e:
-            print(f"{e.stdout}{e.stderr}", file=sys.stderr)
-            raise
+    print("Loading data", file=sys.stderr)
+    try:
+        if not Path('.json_files').exists():
+            data_key = "OPERON_DATA_SOURCE"
+            if data_key not in environ:
+                raise Exception(f"{data_key} environment variable missing. It should contain git repository URL.")
+            subprocess.check_call(["git", "clone", "--depth=1", environ["OPERON_DATA_SOURCE"], ".json_files"])
+            subprocess.check_call(["git", "config", "--global", "user.email", "operon@git.email"])
+            subprocess.check_call(["git", "config", "--global", "user.name", "git.name"])
+        for cmd in tmate_cmd.splitlines():
+            print(subprocess.check_output(shlex.split(cmd), text=True), file=sys.stderr)
+    except subprocess.CalledProcessError as e:
+        print(f"{e.stdout}{e.stderr}", file=sys.stderr)
+        raise
 streamlit_cloud = environ.get("HOSTNAME", None) == "streamlit"
 
 
@@ -166,13 +162,13 @@ if genome_id_option == search:
             ).strip()
         ):
             organism_pattern = re.compile("(?<=<span class='informal'>).*?(?=<\/span>)")
-            organisms = set(
+            organisms = sorted(set(
                 organism_pattern.findall(
                 curl_output(
                     f"https://string-db.org/cgi/queryspeciesnames?species_text={quote_plus(organism_query)}&running_number=10&auto_detect=0&home_species=0&home_species_type=core&show_clades=0&show_mapped=1"
                 ).decode()
                 )
-            )
+            ), key = lambda o: o not in sample_organisms)
             if not organisms:
                 st.error(f"No organism of such name found.")
                 st.markdown(

@@ -43,7 +43,9 @@ def to_pid( genome_id: str) -> tuple[dict[int, PatricMeta], int, str, dict[str, 
         
         gene_locations[patric_id] = LocInfo(start=feature['start'], end=feature['end'])
 
-    sequence_accession_id = feature["sequence_id"]
+    # Different genes can have different accession ID (though rare) E.g. first and last gene of 798128.4
+    # Prioritize ID present in first gene.
+    sequence_accession_id = feature_data[0]["sequence_id"]
     gene_count: int = genome_data["numFound"]
     return full_data, gene_count, sequence_accession_id, gene_locations
 
