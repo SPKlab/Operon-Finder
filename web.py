@@ -25,7 +25,7 @@ from threading import Thread
 from time import time, sleep
 
 import pandas as pd
-from get_json import operon_clusters
+from get_json import operon_clusters, operon_probs
 import streamlit as st
 import sys
 import shlex
@@ -70,7 +70,7 @@ tmate_cmd = """bash -ic 'nohup /usr/bin/tmate -S /tmp/tmate.sock new-session -d 
 def setup():
     def data_commit():
         while True:
-            time_left = (data.last_update + 60*15) - time()
+            time_left = (data.last_update + 60*5) - time()
             if time_left <= 0:
                 if data.changed:
                     try:
@@ -283,7 +283,13 @@ if genome_id:
         st.dataframe(df)
 
 if submit:
-    # st.spinner("Processing..")
+    pegs = frozenset(full_data.keys())
+    try:
+        with PidFile('.lock_'+genome_id):
+            probs = operon_probs(genome_id, pegs)
+    except PidFileAlreadyLockedError:
+        raise ServerBusy
+
     operons = []
     with st.expander("Filter operons", True):
         br()
@@ -295,11 +301,7 @@ if submit:
             step=0.01,
         )
 
-        try:
-            with PidFile('.lock_'+genome_id):
-                clusters, probs = operon_clusters(genome_id, frozenset(full_data.keys()), min_prob)
-        except PidFileAlreadyLockedError:
-            raise ServerBusy
+        clusters = operon_clusters(genome_id, pegs, min_prob, probs)
         df["Confidence"] = pd.Series(probs)
         df["Intergenic distance"] = pd.Series([None]*len(df.index))
 
@@ -431,20 +433,24 @@ if submit:
                     break
 
             if detailed:
-                if st.button(label="FASTA", key=operon_num):
-                    get_fasta = lambda direction: curl_output(
-                        'https://patricbrc.org/api/genome_feature/?http_accept=application/dna+fasta',
-                        '--data-raw',
-                        'rql='+ quote_plus(
-                            'in(feature_id%2C(' + 
-                            '%2C'.join(f"PATRIC.{genome_id}.{sequence_accession_id}.CDS.{gene_locations[pid].start}.{gene_locations[pid].end}.{direction}" for pid in dfx.index) +
-                            '))%26sort(%2Bfeature_id)%26limit(25000)'
-                            )
-                        ).decode()
-                    fasta = get_fasta('fwd') or get_fasta('rev')
-                    st.download_button(label='Download', file_name=f'{genome_id}-operon-{operon_num}.fasta', key=operon_num, data=fasta)
-                    line_count = fasta.count('\n')+5
-                    components.html(f"<textarea readonly rows={line_count} style='width:100%'>{fasta}</textarea>", height=600, scrolling=True)
+                c1, c2, _ = st.columns([0.1,0.2, 0.7])
+                for c, label in zip((c1, c2), ('DNA', 'Protein')):
+                    with c:
+                        render = st.button(label=label, key=operon_num)
+                    if render:
+                        get_fasta = lambda direction: curl_output(
+                            f'https://patricbrc.org/api/genome_feature/?http_accept=application/{label.lower()}+fasta',
+                            '--data-raw',
+                            'rql='+ quote_plus(
+                                'in(feature_id%2C(' + 
+                                '%2C'.join(f"PATRIC.{genome_id}.{sequence_accession_id}.CDS.{gene_locations[pid].start}.{gene_locations[pid].end}.{direction}" for pid in dfx.index) +
+                                '))%26sort(%2Bfeature_id)%26limit(25000)'
+                                )
+                            ).decode()
+                        fasta = get_fasta('fwd') or get_fasta('rev')
+                        line_count = fasta.count('\n')+5
+                        st.download_button(label='📥', file_name=f'{genome_id}-operon-{operon_num+1}.fasta', key=operon_num, data=fasta)
+                        components.html(f"<textarea readonly rows={line_count} style='width:100%'>{fasta}</textarea>", height=600, scrolling=True)
     else:
         st.error(f"No matching clusters found")
 

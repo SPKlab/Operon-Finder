@@ -88,13 +88,12 @@ def operon_probs(genome_id: str, pegs: frozenset) -> dict[str, float]:
     # JSON keys can only be strings
     return {int(gene_id): prob for gene_id, prob in operons.items()}
 
-def operon_clusters(genome_id: str, pegs: frozenset[int], min_prob: float) -> tuple[list[set[int]], dict[int, float]]:
+def operon_clusters(genome_id: str, pegs: frozenset[int], min_prob: float, probs: dict[int, float]) -> list[set[int]]:
     peg_next  = {}
     prev = -1
     for peg in sorted(pegs):
         peg_next[prev] = peg
         prev = peg
-    probs = operon_probs(genome_id, pegs)
     peg_nums = sorted(
         [[peg_num, peg_next[peg_num]] for peg_num, prob in probs.items() if prob >= min_prob]
     )
@@ -107,4 +106,6 @@ def operon_clusters(genome_id: str, pegs: frozenset[int], min_prob: float) -> tu
         else:
             clusters.append({peg_num, next_peg_num})
 
-    return clusters, probs
+    return clusters
+
+
