@@ -1,4 +1,5 @@
 from functools import cache
+from helpers import Wait
 from gzip import decompress
 from shutil import move, rmtree
 from os import makedirs
@@ -71,7 +72,8 @@ def get_operons(genome_id:str, pegs: frozenset) -> dict[str, float]:
     placeholder.empty()
 
     from test import main
-    return main(genome_id, progress_bar)
+    with Wait('.main_predictor_lock'):
+        return main(genome_id, progress_bar)
 
 @cache
 def operon_probs(genome_id: str, pegs: frozenset) -> dict[str, float]:

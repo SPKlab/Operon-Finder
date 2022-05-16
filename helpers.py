@@ -1,4 +1,5 @@
 from collections import namedtuple
+from time import sleep
 from os import makedirs, mkdir
 from pathlib import Path
 from gzip import decompress
@@ -9,9 +10,26 @@ from subprocess import run, check_output
 from json import dump, dumps, load, loads
 from typing import Iterable, Optional
 from time import time
+from pid import PidFile, PidFileError
 
 from attr import dataclass
 
+
+class ServerBusy(Exception):
+    pass
+
+class Wait:
+    def __init__(self, lock_id: str):
+        self.pid_file = PidFile(lock_id)
+    def __enter__(self):
+        while True:
+            try:
+                self.pid_file.__enter__()
+            except PidFileError:
+                # sleep(5)
+                raise ServerBusy
+    def __exit__(self):
+        self.pid_file.__exit__()
 
 @cache
 def curl_output(*args: str)->bytes:

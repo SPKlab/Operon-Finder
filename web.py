@@ -9,7 +9,7 @@
 # pr.enable()
 
 from io import TextIOWrapper
-from pid import PidFile, PidFileAlreadyLockedError
+from helpers import Wait
 import numpy as np
 from json import dumps, loads
 from os import environ
@@ -35,9 +35,6 @@ from pathlib import Path
 import shlex
 import subprocess
 import streamlit.components.v1 as components
-
-class ServerBusy(Exception):
-    pass
 
 if "shell" in st.experimental_get_query_params():
 
@@ -126,7 +123,7 @@ search = "Search genomes"
 genome_id_option = st.sidebar.radio("", (search, manual))
 
 if streamlit_cloud:
-    with PidFile('.setup_lock'):
+    with Wait('.setup_lock'):
         setup()
 
 genome_id = None
@@ -280,11 +277,8 @@ if genome_id:
 
 if submit:
     pegs = frozenset(full_data.keys())
-    try:
-        with PidFile('.lock_'+genome_id):
-            probs = operon_probs(genome_id, pegs)
-    except PidFileAlreadyLockedError:
-        raise ServerBusy
+    with Wait('.lock_'+genome_id):
+        probs = operon_probs(genome_id, pegs)
 
     operons = []
     with st.expander("Filter operons", True):
