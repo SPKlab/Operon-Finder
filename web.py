@@ -424,23 +424,19 @@ if submit:
                     break
 
             if detailed:
-                labels = ("Show DNA/Protein sequence", "DNA", "Protein")
-                label_idx = st.selectbox("", range(len(labels)), format_func=lambda i: labels[i], key=operon_num)
-                if label_idx > 0:
-                    label = labels[label_idx]
-                    get_fasta = lambda direction: curl_output(
-                        f'https://patricbrc.org/api/genome_feature/?http_accept=application/{label.lower()}+fasta',
-                        '--data-raw',
-                        'rql='+ quote_plus(
-                            'in(feature_id%2C(' + 
-                            '%2C'.join(f"PATRIC.{genome_id}.{sequence_accession_id}.CDS.{gene_locations[pid].start}.{gene_locations[pid].end}.{direction}" for pid in dfx.index) +
-                            '))%26sort(%2Bfeature_id)%26limit(25000)'
-                            )
-                        ).decode()
-                    fasta = get_fasta('fwd') or get_fasta('rev')
-                    line_count = fasta.count('\n')+1
-                    st.download_button(label='📥', file_name=f'{genome_id}-operon-{operon_num+1}.fasta', key=operon_num, data=fasta)
-                    components.html(f"<textarea readonly rows={line_count} style='white-space: pre; overflow: scroll; width:100%'>{fasta}</textarea>", height=line_count*16, scrolling=True)
+                c1, _, c2, _ = st.columns([0.05, 0.875, 0.05, 0.025])
+                with c1:
+                    show_dna = st.button("DNA", key=operon_num)
+                if show_dna:
+                    start = gene_locations[min(dfx.index)].start-1
+                    end = gene_locations[max(dfx.index)].end
+                    # https://www.patricbrc.org/view/Genome/511145.12#view_tab=browser&loc=NC_000913%3A63298..63391&tracks=refseqs%2CRefSeqGenes&highlight=
+                    fasta = loads(curl_output(
+                        f"https://p3.theseed.org/services/data_api/jbrowse/genome/{genome_id}/features/{sequence_accession_id}?reference_sequences_only=false&start={gene_locations[min(dfx.index)].start-1}&end={gene_locations[max(dfx.index)].end}"
+                        ))["features"][0]["seq"][:end-start]
+                    with c2:
+                        st.download_button(label='📥', file_name=f'{genome_id}-operon-{operon_num+1}.fasta', key=operon_num, data=fasta)
+                    components.html(f"<textarea readonly rows=20 style='width:100%'>{fasta}</textarea>", height=300, scrolling=False)
     else:
         st.error(f"No matching clusters found")
 
