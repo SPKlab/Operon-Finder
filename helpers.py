@@ -18,18 +18,19 @@ from attr import dataclass
 class ServerBusy(Exception):
     pass
 
-class Wait:
-    def __init__(self, lock_id: str):
-        self.pid_file = PidFile(lock_id)
-    def __enter__(self):
-        while True:
-            try:
-                self.pid_file.__enter__()
-            except PidFileError:
-                # sleep(5)
-                raise ServerBusy
-    def __exit__(self):
-        self.pid_file.__exit__()
+Wait = PidFile
+# class Wait:
+#     def __init__(self, lock_id: str):
+#         self.pid_file = PidFile(lock_id)
+#     def __enter__(self):
+#         while True:
+#             try:
+#                 self.pid_file.__enter__()
+#             except PidFileError:
+#                 # sleep(5)
+#                 raise ServerBusy
+#     def __exit__(self):
+#         self.pid_file.__exit__()
 
 @cache
 def curl_output(*args: str)->bytes:
