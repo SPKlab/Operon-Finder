@@ -15,8 +15,11 @@ Path(f"{path}/train/dummy.jpg").touch(exist_ok=True)
 _data = ImageDataBunch.from_folder('images_ecoli', test='test_operons/')
 
 # Load the model
-learn = cnn_learner(_data, models.resnet18, metrics=accuracy)
-learn = learn.load('best511')
+@st.cache()
+def get_learn():
+    return cnn_learner(_data, models.resnet18, metrics=accuracy).load('best511')
+
+learn = get_learn()
 
 def predictor(idx: int, data: ImageDataBunch) -> tuple[float]:
     p = learn.predict(data.test_ds[idx][0])
