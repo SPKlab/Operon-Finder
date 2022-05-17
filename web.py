@@ -179,8 +179,8 @@ if genome_id_option == search:
                     st.write("---")
                     organism_name = st.selectbox("Choose organism", organisms)
                     
-                genome_organism_id = re.search(r"https://stringdb-static.org/download/protein.links.v11.5/(\d*).protein.links.v11.5.txt.g", curl_output(f"https://string-db.org/cgi/download?species_text={quote_plus(organism_name)}")).groups()[0]
-                a_gene_symbol = next(re.finditer(r"(\S*) BLAST_UniProt_GN_OrderedLocusNames", decompress(curl_output(f"https://stringdb-static.org/download/protein.aliases.v11.5/{genome_organism_id}.protein.aliases.v11.5.txt.gz")))).groups()[0]
+                genome_organism_id = re.search(rb"https://stringdb-static.org/download/protein.links.v11.5/(\d*).protein.links.v11.5.txt.g", curl_output(f"https://string-db.org/cgi/download?species_text={quote_plus(organism_name)}")).groups()[0].decode()
+                a_gene_symbol = next(re.finditer(rb"(\S*) BLAST_UniProt_GN_OrderedLocusNames", decompress(curl_output(f"https://stringdb-static.org/download/protein.aliases.v11.5/{genome_organism_id}.protein.aliases.v11.5.txt.gz")))).groups()[0].decode()
                 features = loads(curl_output( 'https://patricbrc.org/api/genome_feature' , '--data-raw', f'and(keyword(%22{genome_organism_id}%22),keyword(%22{a_gene_symbol}%22))&limit(1)')['response']['docs'])
                 if features:
                     genome_id = features[0]['genome_id']
