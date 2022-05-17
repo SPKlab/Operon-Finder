@@ -5,7 +5,7 @@ from pathlib import Path
 from gzip import decompress
 from urllib.request import urlretrieve
 from glob import glob
-from functools import cache
+from functools import lru_cache
 from subprocess import run, check_output
 from json import dump, dumps, load, loads
 from typing import Iterable, Optional
@@ -32,14 +32,14 @@ Wait = PidFile
 #     def __exit__(self):
 #         self.pid_file.__exit__()
 
-@cache
+@lru_cache(128)
 def curl_output(*args: str)->bytes:
     return check_output(('curl', '--compressed') + args)
 
 PatricMeta = namedtuple('PatricMeta', ['refseq', 'desc', 'protein_id'])
 LocInfo = namedtuple('LocInfo', ['start', 'end'])
 
-@cache
+@lru_cache(128)
 def to_pid( genome_id: str) -> tuple[dict[int, PatricMeta], int, str, dict[str, LocInfo]]:
     genome_data = get_genome_data(genome_id)
     feature_data = genome_data["docs"]
@@ -115,7 +115,7 @@ class _Data:
         self.changed = changed
 data = _Data()
 
-@cache
+@lru_cache(100)
 def get_genome_data(genome_id: str):
     genome_data_dir = f'.json_files/{genome_id}'
     genome_data_path = Path(f'{genome_data_dir}/genome.json')
@@ -135,3 +135,7 @@ def get_genome_data(genome_id: str):
             dump(genome_data, f)
         data.updated()
     return genome_data
+
+@lru_cache(32)
+def stringdb_aliases(genome_organism_id):
+    return decompress(curl_output(f"https://stringdb-static.org/download/protein.aliases.v11.5/{genome_organism_id}.protein.aliases.v11.5.txt.gz"))
