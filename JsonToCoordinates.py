@@ -1,5 +1,6 @@
 from concurrent.futures import ProcessPoolExecutor
-from helpers import fetch_string_scores
+from gzip import decompress
+from helpers import curl_output, fetch_string_scores, stringdb_aliases
 import multiprocessing
 import json
 from tempfile import NamedTemporaryFile
@@ -30,28 +31,30 @@ import re
 def parse_string_scores(genome_id: str)->dict[str,float]:
     fetch_string_scores(genome_id)
 
-    with open(f'./genomes/{genome_id}.PATRIC.gff') as f:
-        next_dic: dict[str, str] = {}
-        prev = 'None'
-        fig_dic = {}
-        for fig_name, gene in re.findall(r'(?:CDS.*?ID=)(.+?)(?:;locus_tag=)(.*?)(?=;)', f.read()):
-            ngene = next_dic[prev] = normalize_refseq(gene)
-            fig_dic[ngene] = fig_name
-            prev = ngene
-        del next_dic['None']
+    next_dic: dict[str, str] = {}
+    prev = 'None'
+    fig_dic = {}
+    for fig_name, gene in re.findall(rb'(?:CDS.*?ID=)(.+?)(?:;locus_tag=)(.*?)(?=;)', 
+                curl_output(f"ftp://ftp.patricbrc.org/genomes/{genome_id}/{genome_id}.PATRIC.gff")):
+        ngene = next_dic[prev] = normalize_refseq(gene.decode())
+        fig_dic[ngene] = fig_name.decode()
+        prev = ngene
+    del next_dic['None']
 
     print("Parsed genomes")
         
     string = {} 
-    with open(f'./strings/{genome_id.split(".")[0]}.protein.links.v11.5.txt') as f:
-        pat = re.compile(r'^\d+?\.(.+?) \d+?\.(.+?) (\d+)')
-        for line in f.readlines():
-            if res := pat.findall(line):
-                    g1, g2, score = res[0]
-                    ng1 = normalize_refseq(g1)
-                    ng2 = normalize_refseq(g2)
-                    if next_dic.get(ng1) == ng2:
-                            string[fig_dic[ng1]] = float(score)/1000
+         
+            
+    organism = genome_id.split('.')[0]
+    string_db_refseq_map: dict[str, str] = {}
+    stringdb_aliases(organism)
+    pat = re.compile(r'^\d+?\.(.+?) \d+?\.(.+?) (\d+)', re.MULTILINE)
+    for g1, g2, score in pat.findall(decompress(curl_output(f"https://stringdb-static.org/download/protein.links.v11.5/{organism}.protein.links.v11.5.txt.gz")).decode()):
+            ng1 = normalize_refseq(g1)
+            ng2 = normalize_refseq(g2)
+            if next_dic.get(ng1) == ng2:
+                    string[fig_dic[ng1]] = float(score)/1000
 
     print("Parsed STRING scores")
     return string
