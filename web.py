@@ -8,6 +8,7 @@
 # pr = cProfile.Profile()
 # pr.enable()
 
+from gzip import decompress
 from io import TextIOWrapper
 from helpers import Wait
 import numpy as np
@@ -177,47 +178,14 @@ if genome_id_option == search:
                 else:
                     st.write("---")
                     organism_name = st.selectbox("Choose organism", organisms)
-
-                from bs4 import BeautifulSoup as bs
-
-                string_page = curl_output(
-                        f"https://string-db.org/cgi/organisms?species_text_organisms={quote_plus(organism_name)}"
-                    ).decode()
-                oid_pattern = re.search(r"(?<=Info&id=).*?(?='>)", string_page)
-                # Two types of pages
-                # https://string-db.org/cgi/organisms?species_text_organisms=Pseudomonas%20aeruginosa%20PAO1
-                # https://string-db.org/cgi/organisms?species_text_organisms=Pseudomonas%20aeruginosa
-                ref_matches = re.findall(
-                    r"(?:(?<=Example identifier: ).*?(?=<\/div>))|(?:(?<=identifiers:<\/div><div class='single_data'>)|(?<=\w, ))\w*(?=<\/div>|(?:[\w, ]*<\/div>))",
-                    string_page,
-                )
-                assert oid_pattern and ref_matches
-                organism_id = oid_pattern.group()
-
-                genome_ids = set()
-                for string_refseq in ref_matches:
-                    genome_results = loads(
-                        curl_output(
-                            "https://patricbrc.org/api/query/",
-                            "-H",
-                            "Content-Type: application/json",
-                            "--data-raw",
-                            '{"genome_feature":{"dataType":"genome_feature","accept":"application/solr+json","query":"and(keyword(%22'
-                            + string_refseq
-                            + "%22),keyword(%22"
-                            + organism_id
-                            + '%22))&ne(annotation,brc1)&ne(feature_type,source)&limit(3)&sort(+annotation,-score)"}}',
-                        )
-                    )["genome_feature"]["result"]
-
-                    if genome_results.get("response", {}).get("docs"):
-                        genome_ids.add(genome_results["response"]["docs"][0]["genome_id"])
-                if not genome_ids:
-                    st.error("No compatible genomes found in PATRIC and STRING database.")
-                elif len(genome_ids) == 1:
-                    genome_id = genome_ids.pop()
+                    
+                genome_organism_id = re.search(r"https://stringdb-static.org/download/protein.links.v11.5/(\d*).protein.links.v11.5.txt.g", curl_output(f"https://string-db.org/cgi/download?species_text={quote_plus(organism_name)}")).groups()[0]
+                a_gene_symbol = next(re.finditer(r"(\S*) BLAST_UniProt_GN_OrderedLocusNames", decompress(curl_output(f"https://stringdb-static.org/download/protein.aliases.v11.5/{genome_organism_id}.protein.aliases.v11.5.txt.gz")))).groups()[0]
+                features = loads(curl_output( 'https://patricbrc.org/api/genome_feature' , '--data-raw', f'and(keyword(%22{genome_organism_id}%22),keyword(%22{a_gene_symbol}%22))&limit(1)')['response']['docs'])
+                if features:
+                    genome_id = features[0]['genome_id']
                 else:
-                    genome_id = st.selectbox("Choose genome", genome_ids)
+                    st.error("No compatible genomes found in PATRIC and STRING database.")
 else:
     genome_id = st.sidebar.text_input(
         "Genome ID",
