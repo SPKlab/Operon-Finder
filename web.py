@@ -435,7 +435,7 @@ if submit:
                         f"https://p3.theseed.org/services/data_api/jbrowse/genome/{genome_id}/features/{sequence_accession_id}?reference_sequences_only=false&start={gene_locations[min(dfx.index)].start-1}&end={gene_locations[max(dfx.index)].end}"
                         ))["features"][0]["seq"][:end-start]
                     with c2:
-                        st.download_button(label='📥', file_name=f'{genome_id}-operon-{operon_num+1}.fasta', key=operon_num, data=fasta)
+                        st.download_button(label='📥', file_name=f'{genome_id}-operon-{operon_num+1}-dna.txt', key=operon_num, data=fasta)
                     components.html(f"<textarea readonly rows=20 style='width:100%'>{fasta}</textarea>", height=300, scrolling=False)
     else:
         st.error(f"No matching clusters found")
