@@ -1,0 +1,11 @@
+default-jre
+tmate
+atool
+p7zip-full
+curl
+htop
+wget
+neovim
+fish
+openssh-server
+reptyr

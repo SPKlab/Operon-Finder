@@ -1,0 +1,201 @@
+html, body, [class*="css"], [class*="st-"] {
+    font-family: 'Tahoma', 'Arial Black', "Arial Bold";
+}
+label[class*="css-"], [class*="st-"], p, [class*=".css-"] {
+	font-size: 1.5rem;
+}
+
+[style*="width: 504px;"] {
+	width: 1000px;
+}
+
+label[class*="css-"] {
+	font-weight: 600 !important;
+	text-shadow: 0 !important;
+}
+ #MainMenu {
+   visibility: hidden;
+ }
+
+ footer {
+   visibility: hidden;
+ }
+
+ .streamlit-expanderHeader {
+   font-size: 1rem !important;
+ }
+
+.appview-container > section > .block-container > div > [data-testid="stVerticalBlock"] > div:nth-child(8)>.stCheckbox>[data-baseweb="checkbox"] {
+   /* display: inline-flex; */
+   -webkit-box-align: center;
+   align-items: center;
+   -webkit-box-pack: center;
+   justify-content: center;
+   font-weight: 400;
+   padding: 0.25rem 0.75rem 0.25rem 0.35em;
+   border-radius: 0.25rem;
+   margin: 0px;
+   line-height: 2;
+   color: inherit;
+   width: auto;
+   background-color: rgb(0, 220, 0);
+   border: 1px solid rgba(38, 39, 48, 0.2);
+   height: 50px !important;
+ }
+
+.appview-container > section > .block-container > div > [data-testid="stVerticalBlock"] > div:nth-child(8)>.stCheckbox {
+	 width: 50% !important;
+	 margin: 0 auto;
+
+	    background-color: #52C11F;
+	    border-color: #3c8c17;
+	    box-shadow: 0 -4px 12px -1px rgb(82 193 31 / 30%), 0 1px 1px 0 rgb(0 0 0 / 35%), 0 2px 6px 1px rgb(0 0 0 / 30%), 0 10px 6px -2px rgb(0 0 0 / 25%), 0 1px 0 0 rgb(255 255 255 / 20%) inset, 0 -2.5em 2em -1.5em rgb(0 0 0 / 12%) inset;
+
+	    background: transparent;
+	    cursor: pointer;
+	    transition: box-shadow 0.3s, background-color 0.3s;
+	    text-shadow: 0 -1px 0 rgb(0 0 0 / 20%), 0 1px 0 rgb(255 255 255 / 20%);
+  }
+.appview-container > section > .block-container > div > [data-testid="stVerticalBlock"] > div:nth-child(6)>div>[data-baseweb] {
+	 margin: 0 auto;
+
+	    border-color: #ff0000;
+	    box-shadow: 0 -4px 12px -1px rgb(255 0 0 / 30%), 0 1px 1px 0 rgb(0 0 0 / 35%), 0 2px 6px 1px rgb(0 0 0 / 30%), 0 10px 6px -2px rgb(0 0 0 / 25%), 0 1px 0 0 rgb(255 255 255 / 20%) inset, 0 -2.5em 2em -1.5em rgb(0 0 0 / 12%) inset;
+
+	    background: transparent;
+	    cursor: pointer;
+	    transition: box-shadow 0.3s, background-color 0.3s;
+	    text-shadow: 0 -1px 0 rgb(0 0 0 / 20%), 0 1px 0 rgb(255 255 255 / 20%);
+  }
+
+.appview-container > section > .block-container > div > [data-testid="stVerticalBlock"] > div:nth-child(8)>.stCheckbox>[data-baseweb="checkbox"] [aria-checked="true"] {
+	 width: 1.5em !important;
+	 height: 1.5em !important;
+	 background-color: #3c8c17;
+	 border-color: #3c8c17;
+
+ }
+
+ .appview-container > section > .block-container > div > [data-testid="stVerticalBlock"] > div:nth-child(8) > .row-widget.stButton > button {
+	 padding: 0.5rem 1.5rem;
+ }
+
+ .streamlit-expanderHeader {
+	 font-weight: 600;
+ }
+
+ .table-borderless tbody+tbody,
+ .table-borderless td,
+ .table-borderless th,
+ .table-borderless thead th {
+   border: 0;
+   text-align: center;
+ }
+
+ .table-borderless td:nth-child(1),
+ .table-borderless th:nth-child(1) {
+   width: 4em;
+ }
+
+ .table-borderless td:nth-child(2),
+ .table-borderless th:nth-child(2) {
+   width: 10em;
+ }
+
+ .table-borderless td:nth-last-child(4),
+ .table-borderless th:nth-last-child(4) {
+   width: 9em;
+ }
+
+ .table-borderless td:nth-last-child(3),
+ .table-borderless th:nth-last-child(3) {
+   width: 7em;
+ }
+
+ .table-borderless td:nth-last-child(2),
+ .table-borderless th:nth-last-child(2) {
+   width: 7em;
+ }
+
+ .table-borderless td:nth-last-child(1),
+ .table-borderless th:nth-last-child(1) {
+   width: 7em;
+ }
+
+ .table-borderless {
+   width: 100%;
+   table-layout: fixed;
+ }
+
+ .streamlit-expanderContent:nth-child(2) [data-testid='stVerticalBlock']>.element-container:nth-child(2) [data-baseweb="slider"]>div:nth-child(1) {
+   background-image: linear-gradient(to right, red, yellow, green);
+ }
+
+.block-container {
+    padding: 0rem 0% 0rem !important;
+    max-width: 70em !important;
+}
+
+header[data-testid='stHeader'] {
+	display: none !important;
+}
+
+.appview-container > section > .block-container > div > [data-testid="stVerticalBlock"] > div:nth-child(1) {
+	display: none !important;
+}
+.appview-container > section > .block-container > div > [data-testid="stVerticalBlock"] > div:nth-child(2) {
+	display: none !important;
+}
+
+.stApp {
+	background:#e7dcff;
+    border-style: solid;
+    border-width: 0 calc(50vw - 40em) 0 calc(50vw - 40em);
+    border-color: black;
+}
+
+.appview-container > section > .block-container > div > [data-testid="stVerticalBlock"] .element-container:nth-child(3) > .stMarkdown > [data-testid="stMarkdownContainer"] {
+	    background: #a46cff;
+	    border-radius: 0 0 3em 3em;
+	text-align: center;
+	margin: 0 -1em 0 -1em;
+}
+
+
+ img[alt="operon-logo"] {
+	 height: 10em;
+	 margin: 0em 0em -10em 0em;
+ }
+ img[alt="iitg-logo"] {
+	 height: 10em;
+	 float: right;
+	 margin: 0.6em 1em 0em 0em;
+ }
+ img[alt="lab-logo"] {
+	 height: 10em;
+	 float: left;
+	 margin: 0.6em 0em 0em 1em;
+ }
+
+@media (max-width: 70em) {
+	 img[alt="operon-logo"] {
+		 height: 14vw;
+		 margin: 0em 0em -13vw 0em;
+	 }
+	 img[alt="lab-logo"] {
+		 height: 14vw;
+	 }
+	 img[alt="iitg-logo"] {
+		 height: 14vw;
+	 }
+ }
+
+.appview-container > section > .block-container > div > [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"] > [data-testid="column"] > div > [data-testid="stVerticalBlock"] > .element-container > .row-widget.stCheckbox > label[data-baseweb="checkbox"] {
+	 width: fit-content;
+	 background: rgb(210 190 255);
+ }
+
+.appview-container > section > .block-container > div > [data-testid="stVerticalBlock"] > .element-container > .stSlider > label {
+    font-size: 1rem !important;
+ }
+

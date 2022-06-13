@@ -1,0 +1,1 @@
+<img src="info.svg" width=100%>
