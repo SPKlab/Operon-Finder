@@ -3,7 +3,7 @@ from base64 import b64encode
 import sys
 from time import sleep
 from helpers import source_email, send_alert_background, logger
-import streamlit as st
+import interface as st
 from get_json import get_operons_background_process, get_operon_path, get_operon_progress_path, operons_in_progress, get_email_alerts_dir_path
 from json import loads
 from email_validator import validate_email, EmailNotValidError
